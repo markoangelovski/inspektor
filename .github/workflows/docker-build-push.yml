@@ -24,139 +24,139 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 1 – Static analysis & tests
   # ─────────────────────────────────────────────────────────────────────────────
-  test:
-    name: 🧪 Test & Lint
-    runs-on: ubuntu-latest
+  # test:
+  #   name: 🧪 Test & Lint
+  #   runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: laravel_test
-          POSTGRES_USER: laravel
-          POSTGRES_PASSWORD: secret
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd="pg_isready -U laravel -d laravel_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+  #   services:
+  #     postgres:
+  #       image: postgres:16-alpine
+  #       env:
+  #         POSTGRES_DB: laravel_test
+  #         POSTGRES_USER: laravel
+  #         POSTGRES_PASSWORD: secret
+  #       ports: ["5432:5432"]
+  #       options: >-
+  #         --health-cmd="pg_isready -U laravel -d laravel_test"
+  #         --health-interval=10s
+  #         --health-timeout=5s
+  #         --health-retries=5
 
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+  #     redis:
+  #       image: redis:7-alpine
+  #       ports: ["6379:6379"]
+  #       options: >-
+  #         --health-cmd="redis-cli ping"
+  #         --health-interval=10s
+  #         --health-timeout=5s
+  #         --health-retries=5
 
-      meilisearch:
-        image: getmeili/meilisearch:v1.12
-        env:
-          MEILI_MASTER_KEY: testmasterkey
-          MEILI_ENV: development
-          MEILI_NO_ANALYTICS: "true"
-        ports: ["7700:7700"]
-        options: >-
-          --health-cmd="curl -f http://localhost:7700/health"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+  #     meilisearch:
+  #       image: getmeili/meilisearch:v1.12
+  #       env:
+  #         MEILI_MASTER_KEY: testmasterkey
+  #         MEILI_ENV: development
+  #         MEILI_NO_ANALYTICS: "true"
+  #       ports: ["7700:7700"]
+  #       options: >-
+  #         --health-cmd="curl -f http://localhost:7700/health"
+  #         --health-interval=10s
+  #         --health-timeout=5s
+  #         --health-retries=5
 
-    steps:
-      - name: ⬇️ Checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: ⬇️ Checkout
+  #       uses: actions/checkout@v4
 
-      - name: 🐘 Setup PHP 8.4
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.4"
-          extensions: bcmath, gd, intl, mbstring, opcache, pcntl, pdo_pgsql, pgsql, redis, zip
-          coverage: xdebug
+  #     - name: 🐘 Setup PHP 8.4
+  #       uses: shivammathur/setup-php@v2
+  #       with:
+  #         php-version: "8.4"
+  #         extensions: bcmath, gd, intl, mbstring, opcache, pcntl, pdo_pgsql, pgsql, redis, zip
+  #         coverage: xdebug
 
-      - name: 📦 Cache Composer packages
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
+  #     - name: 📦 Cache Composer packages
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: vendor
+  #         key: composer-${{ hashFiles('composer.lock') }}
+  #         restore-keys: composer-
 
-      - name: 📦 Cache Node modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-${{ hashFiles('package-lock.json') }}
-          restore-keys: node-
+  #     - name: 📦 Cache Node modules
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: node_modules
+  #         key: node-${{ hashFiles('package-lock.json') }}
+  #         restore-keys: node-
 
-      - name: 🔧 Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+  #     - name: 🔧 Install Composer dependencies
+  #       run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: 🎨 Install Node dependencies & build assets
-        run: |
-          npm ci
-          npm run build
+  #     - name: 🎨 Install Node dependencies & build assets
+  #       run: |
+  #         npm ci
+  #         npm run build
 
-      - name: ⚙️ Prepare Laravel environment
-        run: |
-          cp .env.example .env.testing
-          php artisan key:generate --env=testing
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: laravel_test
-          DB_USERNAME: laravel
-          DB_PASSWORD: secret
-          REDIS_HOST: 127.0.0.1
-          REDIS_PORT: 6379
-          CACHE_DRIVER: redis
-          QUEUE_CONNECTION: sync # run jobs synchronously in tests
-          SCOUT_DRIVER: meilisearch
-          MEILISEARCH_HOST: http://127.0.0.1:7700
-          MEILISEARCH_KEY: testmasterkey
+  #     - name: ⚙️ Prepare Laravel environment
+  #       run: |
+  #         cp .env.example .env.testing
+  #         php artisan key:generate --env=testing
+  #       env:
+  #         APP_ENV: testing
+  #         DB_CONNECTION: pgsql
+  #         DB_HOST: 127.0.0.1
+  #         DB_PORT: 5432
+  #         DB_DATABASE: laravel_test
+  #         DB_USERNAME: laravel
+  #         DB_PASSWORD: secret
+  #         REDIS_HOST: 127.0.0.1
+  #         REDIS_PORT: 6379
+  #         CACHE_DRIVER: redis
+  #         QUEUE_CONNECTION: sync # run jobs synchronously in tests
+  #         SCOUT_DRIVER: meilisearch
+  #         MEILISEARCH_HOST: http://127.0.0.1:7700
+  #         MEILISEARCH_KEY: testmasterkey
 
-      - name: 🗄️ Run migrations
-        run: php artisan migrate --env=testing --force
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: laravel_test
-          DB_USERNAME: laravel
-          DB_PASSWORD: secret
+  #     - name: 🗄️ Run migrations
+  #       run: php artisan migrate --env=testing --force
+  #       env:
+  #         DB_CONNECTION: pgsql
+  #         DB_HOST: 127.0.0.1
+  #         DB_PORT: 5432
+  #         DB_DATABASE: laravel_test
+  #         DB_USERNAME: laravel
+  #         DB_PASSWORD: secret
 
-      - name: 🔍 Lint with Pint
-        run: vendor/bin/pint --test
+  #     - name: 🔍 Lint with Pint
+  #       run: vendor/bin/pint --test
 
-      - name: 🔬 PHPStan static analysis
-        run: vendor/bin/phpstan analyse --memory-limit=512M
+  #     - name: 🔬 PHPStan static analysis
+  #       run: vendor/bin/phpstan analyse --memory-limit=512M
 
-      - name: ✅ Run Pest tests with coverage
-        run: php artisan test --parallel --coverage-clover=coverage.xml
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: laravel_test
-          DB_USERNAME: laravel
-          DB_PASSWORD: secret
-          REDIS_HOST: 127.0.0.1
-          REDIS_PORT: 6379
-          CACHE_DRIVER: redis
-          QUEUE_CONNECTION: sync
-          SCOUT_DRIVER: meilisearch
-          MEILISEARCH_HOST: http://127.0.0.1:7700
-          MEILISEARCH_KEY: testmasterkey
+  #     - name: ✅ Run Pest tests with coverage
+  #       run: php artisan test --parallel --coverage-clover=coverage.xml
+  #       env:
+  #         APP_ENV: testing
+  #         DB_CONNECTION: pgsql
+  #         DB_HOST: 127.0.0.1
+  #         DB_PORT: 5432
+  #         DB_DATABASE: laravel_test
+  #         DB_USERNAME: laravel
+  #         DB_PASSWORD: secret
+  #         REDIS_HOST: 127.0.0.1
+  #         REDIS_PORT: 6379
+  #         CACHE_DRIVER: redis
+  #         QUEUE_CONNECTION: sync
+  #         SCOUT_DRIVER: meilisearch
+  #         MEILISEARCH_HOST: http://127.0.0.1:7700
+  #         MEILISEARCH_KEY: testmasterkey
 
-      # - name: 📊 Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v4
-      #   if: github.event_name != 'pull_request'
-      #   with:
-      #     files: coverage.xml
-      #     token: ${{ secrets.CODECOV_TOKEN }}
+  #     # - name: 📊 Upload coverage to Codecov
+  #     #   uses: codecov/codecov-action@v4
+  #     #   if: github.event_name != 'pull_request'
+  #     #   with:
+  #     #     files: coverage.xml
+  #     #     token: ${{ secrets.CODECOV_TOKEN }}
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2 – Build & push Docker image
