@@ -38,6 +38,13 @@ RUN npm ci --ignore-scripts
 
 # Copy source and build
 COPY . .
+
+# Some packages (e.g. livewire/flux) ship CSS/assets inside vendor/.
+# Vite resolves those paths at build time, so vendor must be present in this
+# stage even though it is a PHP dependency. We copy it from the composer stage
+# rather than re-running composer install here.
+COPY --from=composer-deps /inspektor/vendor ./vendor
+
 RUN npm run build
 
 

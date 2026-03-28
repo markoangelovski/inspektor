@@ -112,7 +112,7 @@ jobs:
   #         REDIS_HOST: 127.0.0.1
   #         REDIS_PORT: 6379
   #         CACHE_DRIVER: redis
-  #         QUEUE_CONNECTION: sync # run jobs synchronously in tests
+  #         QUEUE_CONNECTION: sync   # run jobs synchronously in tests
   #         SCOUT_DRIVER: meilisearch
   #         MEILISEARCH_HOST: http://127.0.0.1:7700
   #         MEILISEARCH_KEY: testmasterkey
@@ -151,12 +151,12 @@ jobs:
   #         MEILISEARCH_HOST: http://127.0.0.1:7700
   #         MEILISEARCH_KEY: testmasterkey
 
-  #     # - name: 📊 Upload coverage to Codecov
-  #     #   uses: codecov/codecov-action@v4
-  #     #   if: github.event_name != 'pull_request'
-  #     #   with:
-  #     #     files: coverage.xml
-  #     #     token: ${{ secrets.CODECOV_TOKEN }}
+  #     - name: 📊 Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v4
+  #       if: github.event_name != 'pull_request'
+  #       with:
+  #         files: coverage.xml
+  #         token: ${{ secrets.CODECOV_TOKEN }}
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2 – Build & push Docker image
@@ -180,7 +180,6 @@ jobs:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
 
-      # Multi-platform builds: linux/amd64 (standard) + linux/arm64 (AWS Graviton / Apple M-series)
       - name: 🔧 Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -217,7 +216,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # GHA cache backend — vastly speeds up repeated builds by reusing
