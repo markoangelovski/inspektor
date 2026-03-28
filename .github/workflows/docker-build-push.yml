@@ -257,7 +257,10 @@ jobs:
       - name: 🔍 Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}:${{ needs.build-push.outputs.image-tag }}"
+          # Reference by digest (sha256:...) rather than a tag — digest is
+          # immutable and set as a job output by build-push-action, so this
+          # always points to exactly the image that was just pushed.
+          image-ref: "${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}@${{ needs.build-push.outputs.image-digest }}"
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH

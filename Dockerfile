@@ -28,7 +28,7 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scr
 # =============================================================================
 # Stage 2: Node / front-end assets
 # =============================================================================
-FROM node:20-alpine AS node-assets
+FROM node:24-alpine AS node-assets
 
 WORKDIR /inspektor
 
