@@ -1,228 +1,272 @@
-# name: 🚀 Build & Push Docker Image
+name: 🚀 Build & Push Docker Image
 
-# on:
-#   push:
-#     branches:
-#       - main
-#       - master
-#     tags:
-#       - "v*.*.*"
-#   pull_request:
-#     branches:
-#       - main
-#       - master
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+      - master
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-# env:
-#   DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/inspektor # override in repo vars
-#   REGISTRY: docker.io
+env:
+  DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.APP_NAME || 'laravel-app' }}
+  REGISTRY: docker.io
 
-# jobs:
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   # Job 1 – Static analysis & tests
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   test:
-#     name: 🧪 Test & Lint
-#     runs-on: ubuntu-latest
-#     services:
-#       mysql:
-#         image: mysql:8.0
-#         env:
-#           MYSQL_ROOT_PASSWORD: secret
-#           MYSQL_DATABASE: laravel_test
-#         ports: ["3306:3306"]
-#         options: >-
-#           --health-cmd="mysqladmin ping -pSecret"
-#           --health-interval=10s
-#           --health-timeout=5s
-#           --health-retries=5
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1 – Static analysis & tests
+  # ─────────────────────────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Test & Lint
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: ⬇️ Checkout
-#         uses: actions/checkout@v4
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: laravel_test
+          POSTGRES_USER: laravel
+          POSTGRES_PASSWORD: secret
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U laravel -d laravel_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-#       - name: 🐘 Setup PHP
-#         uses: shivammathur/setup-php@v2
-#         with:
-#           php-version: "8.3"
-#           extensions: bcmath, gd, intl, mbstring, opcache, pcntl, pdo_mysql, redis, zip
-#           coverage: xdebug
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-#       - name: 📦 Cache Composer packages
-#         uses: actions/cache@v4
-#         with:
-#           path: vendor
-#           key: composer-${{ hashFiles('composer.lock') }}
-#           restore-keys: composer-
+      meilisearch:
+        image: getmeili/meilisearch:v1.12
+        env:
+          MEILI_MASTER_KEY: testmasterkey
+          MEILI_ENV: development
+          MEILI_NO_ANALYTICS: "true"
+        ports: ["7700:7700"]
+        options: >-
+          --health-cmd="curl -f http://localhost:7700/health"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-#       - name: 📦 Cache Node modules
-#         uses: actions/cache@v4
-#         with:
-#           path: node_modules
-#           key: node-${{ hashFiles('package-lock.json') }}
-#           restore-keys: node-
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
 
-#       - name: 🔧 Install Composer dependencies
-#         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: 🐘 Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: bcmath, gd, intl, mbstring, opcache, pcntl, pdo_pgsql, pgsql, redis, zip
+          coverage: xdebug
 
-#       - name: 🎨 Install Node dependencies & build assets
-#         run: |
-#           npm ci
-#           npm run build
+      - name: 📦 Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
 
-#       - name: ⚙️ Prepare Laravel environment
-#         run: |
-#           cp .env.example .env.testing
-#           php artisan key:generate --env=testing
-#         env:
-#           DB_CONNECTION: mysql
-#           DB_HOST: 127.0.0.1
-#           DB_PORT: 3306
-#           DB_DATABASE: laravel_test
-#           DB_USERNAME: root
-#           DB_PASSWORD: secret
+      - name: 📦 Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-
 
-#       - name: 🗄️ Run migrations
-#         run: php artisan migrate --env=testing --force
+      - name: 🔧 Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-#       - name: 🔍 PHP CS Fixer / Pint
-#         run: vendor/bin/pint --test
+      - name: 🎨 Install Node dependencies & build assets
+        run: |
+          npm ci
+          npm run build
 
-#       - name: 🔬 PHPStan static analysis
-#         run: vendor/bin/phpstan analyse --memory-limit=512M
+      - name: ⚙️ Prepare Laravel environment
+        run: |
+          cp .env.example .env.testing
+          php artisan key:generate --env=testing
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel
+          DB_PASSWORD: secret
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          CACHE_DRIVER: redis
+          QUEUE_CONNECTION: sync # run jobs synchronously in tests
+          SCOUT_DRIVER: meilisearch
+          MEILISEARCH_HOST: http://127.0.0.1:7700
+          MEILISEARCH_KEY: testmasterkey
 
-#       - name: ✅ PHPUnit tests with coverage
-#         run: |
-#           php artisan test --parallel --coverage-clover=coverage.xml
-#         env:
-#           DB_CONNECTION: mysql
-#           DB_HOST: 127.0.0.1
-#           DB_PORT: 3306
-#           DB_DATABASE: laravel_test
-#           DB_USERNAME: root
-#           DB_PASSWORD: secret
+      - name: 🗄️ Run migrations
+        run: php artisan migrate --env=testing --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel
+          DB_PASSWORD: secret
 
-#       # - name: 📊 Upload coverage to Codecov
-#       #   uses: codecov/codecov-action@v4
-#       #   if: github.event_name != 'pull_request'
-#       #   with:
-#       #     files: coverage.xml
-#       #     token: ${{ secrets.CODECOV_TOKEN }}
+      - name: 🔍 Lint with Pint
+        run: vendor/bin/pint --test
 
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   # Job 2 – Build & push Docker image
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   build-push:
-#     name: 🐳 Build & Push
-#     runs-on: ubuntu-latest
-#     needs: test
-#     # Only push on main/master push or version tags; NOT on PRs
-#     if: github.event_name != 'pull_request'
+      - name: 🔬 PHPStan static analysis
+        run: vendor/bin/phpstan analyse --memory-limit=512M
 
-#     permissions:
-#       contents: read
-#       packages: write # needed if you also push to GHCR
+      - name: ✅ Run Pest tests with coverage
+        run: php artisan test --parallel --coverage-clover=coverage.xml
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel
+          DB_PASSWORD: secret
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          CACHE_DRIVER: redis
+          QUEUE_CONNECTION: sync
+          SCOUT_DRIVER: meilisearch
+          MEILISEARCH_HOST: http://127.0.0.1:7700
+          MEILISEARCH_KEY: testmasterkey
 
-#     steps:
-#       - name: ⬇️ Checkout
-#         uses: actions/checkout@v4
+      # - name: 📊 Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   if: github.event_name != 'pull_request'
+      #   with:
+      #     files: coverage.xml
+      #     token: ${{ secrets.CODECOV_TOKEN }}
 
-#       # Enable multi-platform builds (linux/amd64 + linux/arm64)
-#       - name: 🔧 Set up QEMU
-#         uses: docker/setup-qemu-action@v3
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2 – Build & push Docker image
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-push:
+    name: 🐳 Build & Push
+    runs-on: ubuntu-latest
+    needs: test
+    # Only push on main/master push or version tags — not on PRs
+    if: github.event_name != 'pull_request'
 
-#       - name: 🔧 Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v3
-#         with:
-#           driver-opts: image=moby/buildkit:latest
+    permissions:
+      contents: read
+      packages: write
 
-#       - name: 🔐 Log in to Docker Hub
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKERHUB_USERNAME }}
-#           password: ${{ secrets.DOCKERHUB_TOKEN }}
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: sha-${{ github.sha }}
 
-#       # Derive tags & labels automatically from git metadata
-#       - name: 🏷️ Extract Docker metadata
-#         id: meta
-#         uses: docker/metadata-action@v5
-#         with:
-#           images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}
-#           tags: |
-#             # tag latest on default branch
-#             type=raw,value=latest,enable={{is_default_branch}}
-#             # short SHA always
-#             type=sha,prefix=sha-,format=short
-#             # semver tags  →  v1.2.3 / v1.2 / v1
-#             type=semver,pattern={{version}}
-#             type=semver,pattern={{major}}.{{minor}}
-#             type=semver,pattern={{major}}
-#           labels: |
-#             org.opencontainers.image.title=Inspektor
-#             org.opencontainers.image.vendor=Inspektor Org
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
 
-#       - name: 🏗️ Build & push image
-#         uses: docker/build-push-action@v6
-#         with:
-#           context: .
-#           file: Dockerfile
-#           push: true
-#           platforms: linux/amd64
-#           tags: ${{ steps.meta.outputs.tags }}
-#           labels: ${{ steps.meta.outputs.labels }}
-#           # Layer cache backed by GitHub Actions cache API
-#           cache-from: type=gha
-#           cache-to: type=gha,mode=max
-#           # Pass build-time arguments (no secrets baked in)
-#           build-args: |
-#             BUILD_DATE=${{ github.event.repository.updated_at }}
-#             VCS_REF=${{ github.sha }}
+      # Multi-platform builds: linux/amd64 (standard) + linux/arm64 (AWS Graviton / Apple M-series)
+      - name: 🔧 Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-#       - name: 🖊️ Update Docker Hub description
-#         uses: peter-evans/dockerhub-description@v4
-#         with:
-#           username: ${{ secrets.DOCKERHUB_USERNAME }}
-#           password: ${{ secrets.DOCKERHUB_TOKEN }}
-#           repository: ${{ env.DOCKERHUB_IMAGE }}
-#           readme-filepath: README.md
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   # Job 3 – Security scan (runs after push)
-#   # ─────────────────────────────────────────────────────────────────────────────
-#   scan:
-#     name: 🔒 Trivy Security Scan
-#     runs-on: ubuntu-latest
-#     needs: build-push
-#     if: github.event_name != 'pull_request'
+      - name: 🔐 Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-#     permissions:
-#       security-events: write # for uploading SARIF results
+      # Auto-derives tags from git context:
+      #   push to main/master  → latest + sha-<short>
+      #   push tag v1.2.3      → 1.2.3 + 1.2 + 1 + latest + sha-<short>
+      - name: 🏷️ Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          labels: |
+            org.opencontainers.image.vendor=${{ vars.ORG_NAME || 'Your Org' }}
 
-#     steps:
-#       - name: ⬇️ Checkout
-#         uses: actions/checkout@v4
+      - name: 🏗️ Build & push image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GHA cache backend — vastly speeds up repeated builds by reusing
+          # unchanged layers (composer deps, node_modules, base image layers)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-#       - name: 🔐 Log in to Docker Hub
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKERHUB_USERNAME }}
-#           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 🖊️ Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKERHUB_IMAGE }}
+          readme-filepath: README.md
 
-#       - name: 🔍 Run Trivy vulnerability scanner
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           image-ref: "${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}:sha-${{ github.sha }}"
-#           format: sarif
-#           output: trivy-results.sarif
-#           severity: CRITICAL,HIGH
-#           exit-code: "1" # fail the job on CRITICAL/HIGH findings
-#           ignore-unfixed: true
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3 – Security scan
+  # ─────────────────────────────────────────────────────────────────────────────
+  scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: build-push
+    if: github.event_name != 'pull_request'
 
-#       - name: 📤 Upload Trivy results to GitHub Security tab
-#         uses: github/codeql-action/upload-sarif@v3
-#         if: always()
-#         with:
-#           sarif_file: trivy-results.sarif
+    permissions:
+      security-events: write
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔐 Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🔍 Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ env.REGISTRY }}/${{ env.DOCKERHUB_IMAGE }}:${{ needs.build-push.outputs.image-tag }}"
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: 📤 Upload results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
