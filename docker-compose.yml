@@ -1,0 +1,76 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: laravel_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: content_inspector_db
+      POSTGRES_USER: content_inspector
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: laravel_pgadmin
+    restart: unless-stopped
+    depends_on:
+      - database
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  redis:
+    image: redis:7-alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: laravel_redisinsight
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/db
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: laravel_meilisearch
+    restart: unless-stopped
+
+    ports:
+      - "7700:7700"
+
+    environment:
+      # REQUIRED: set a strong key in production
+      MEILI_MASTER_KEY: super-secure-long-random-string
+
+      # Disable telemetry
+      MEILI_NO_ANALYTICS: "true"
+
+      # Production tuning
+      MEILI_ENV: "production"
+
+    volumes:
+      - meilisearch_data:/meilisearch_data
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  redis_data:
+  redisinsight_data:
+  meilisearch_data:

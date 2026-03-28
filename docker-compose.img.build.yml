@@ -1,0 +1,175 @@
+services:
+  inspektor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: inspektor-app:local
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: inspektor
+      DB_USERNAME: inspektor
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      # -- OPcache (serversideup/php is configured via env vars, not .ini files)
+      PHP_OPCACHE_ENABLE: "1"
+      PHP_OPCACHE_MEMORY_CONSUMPTION: "256"
+      PHP_OPCACHE_MAX_ACCELERATED_FILES: "20000"
+      PHP_OPCACHE_VALIDATE_TIMESTAMPS: "0"
+      PHP_OPCACHE_REVALIDATE_FREQ: "0"
+      PHP_OPCACHE_SAVE_COMMENTS: "1"
+      # -- serversideup/php built-in Laravel automations
+      # The image will automatically run these artisan commands on startup.
+      AUTORUN_ENABLED: "true"
+      AUTORUN_LARAVEL_STORAGE_LINK: "true"
+      AUTORUN_LARAVEL_MIGRATION: "true"
+      AUTORUN_LARAVEL_CONFIG_CACHE: "true"
+      AUTORUN_LARAVEL_ROUTE_CACHE: "true"
+      AUTORUN_LARAVEL_VIEW_CACHE: "true"
+      AUTORUN_LARAVEL_EVENT_CACHE: "true"
+    volumes:
+      - storage_data:/var/www/html/storage  # persist logs & uploaded files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - inspektor
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: inspektor
+      POSTGRES_USER: inspektor
+      POSTGRES_PASSWORD: secret
+      PGDATA: /var/lib/postgresql/data/pgdata
+    # Performance tuning flags (suitable for a dev/staging box with ~2 GB RAM)
+    command: >
+      postgres
+        -c max_connections=100
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=64MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=4MB
+        -c log_min_duration_statement=1000
+    ports:
+      - "5432:5432"   # expose for local DB clients (TablePlus, psql, etc.)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inspektor -d inspektor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - inspektor
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - inspektor
+
+   # ── Horizon queue worker ────────────────────────────────────────────────────
+  # Runs the same image as the app service but overrides the command to run
+  # Horizon instead of Nginx+FPM. This is the recommended pattern for
+  # serversideup/php fpm-nginx images — a separate container per concern.
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: inspektor-horizon:local
+    restart: unless-stopped
+    # serversideup/php:cli variant would also work; using the same image avoids
+    # maintaining a second image and keeps the vendor/app code identical.
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    environment:
+      APP_ENV: local
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: inspektor
+      DB_USERNAME: inspektor
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      SCOUT_DRIVER: meilisearch
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_KEY: ${MEILISEARCH_KEY:-masterKey}
+    volumes:
+      - storage_data:/var/www/html/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      inspektor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "/var/www/html/artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - inspektor
+ 
+ # ── Meilisearch ─────────────────────────────────────────────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY:-masterKey}
+      MEILI_ENV: development      # change to "production" in prod (disables search preview)
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch_data:/meili_data
+    ports:
+      - "7700:7700"               # expose for local Meilisearch dashboard
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - inspektor
+
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:
+  meilisearch_data:
+
+networks:
+  inspektor:
+    driver: bridge

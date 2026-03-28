@@ -1,0 +1,52 @@
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Local dev
+.env
+.env.*
+!.env.example
+docker-compose*.yml
+Makefile
+
+# Node
+node_modules
+npm-debug.log*
+
+# Tests & tooling
+tests
+.phpunit.result.cache
+phpunit.xml
+phpunit.xml.dist
+.phpstan*
+phpstan.neon*
+phpstan.dist.neon
+.php-cs-fixer*
+pint.json
+psalm.xml
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docs
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+
+# Storage (runtime — injected at startup or via volume)
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+
+# Build artefacts (will be built fresh inside Docker)
+public/hot
+public/storage
