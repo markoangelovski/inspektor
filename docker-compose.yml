@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: content_inspector
       POSTGRES_PASSWORD: secret
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - inspektor_postgres_data:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,7 +24,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - inspektor_pgadmin_data:/var/lib/pgadmin
 
   redis:
     image: redis:7-alpine
@@ -34,7 +34,7 @@ services:
       - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - inspektor_redis_data:/data
 
   redisinsight:
     image: redis/redisinsight:latest
@@ -45,7 +45,7 @@ services:
     ports:
       - "5540:5540"
     volumes:
-      - redisinsight_data:/db
+      - inspektor_redisinsight_data:/db
 
   meilisearch:
     image: getmeili/meilisearch:v1.7
@@ -66,11 +66,11 @@ services:
       MEILI_ENV: "production"
 
     volumes:
-      - meilisearch_data:/meilisearch_data
+      - inspektor_meilisearch_data:/meilisearch_data
 
 volumes:
-  postgres_data:
-  pgadmin_data:
-  redis_data:
-  redisinsight_data:
-  meilisearch_data:
+  inspektor_postgres_data:
+  inspektor_pgadmin_data:
+  inspektor_redis_data:
+  inspektor_redisinsight_data:
+  inspektor_meilisearch_data:
