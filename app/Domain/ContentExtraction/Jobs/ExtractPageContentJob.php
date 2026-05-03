@@ -4,12 +4,9 @@ namespace App\Domain\ContentExtraction\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Queue\Middleware\RateLimited;
 use App\Domain\ContentExtraction\Services\PageFetcher;
 use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Domain\ContentExtraction\Services\RunFinalizer;
@@ -44,13 +41,6 @@ class ExtractPageContentJob implements ShouldQueue
         $this->websiteId = PageExtraction::find($pageExtractionId)?->run?->website_id;
     }
 
-    /**
-     * Get the middleware the job should pass through.
-     */
-    // public function middleware(): array
-    // {
-    //     return [new RateLimited('external-crawler')];
-    // }
 
     /**
      * Execute the job.
@@ -87,22 +77,13 @@ class ExtractPageContentJob implements ShouldQueue
 
             // 3. Parse Content
             $dom = new \DOMDocument();
-            // Use @ to suppress warnings from malformed HTML
             @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
             $xpath = new \DOMXPath($dom);
 
-            // Strip noise
-            foreach ($xpath->query('//script|//style|//iframe|//noscript') as $node) {
-                $node->parentNode->removeChild($node);
-            }
-
+            $bodyNode = $xpath->query('//body')->item(0);
             $jsonContent = [
-                'head' => [
-                    'title' => ($titleNode = $xpath->query('//title')->item(0)) ? $titleNode->nodeValue : '',
-                ],
-                'body' => [
-                    'text' => trim(preg_replace('/\s+/', ' ', $dom->textContent)),
-                ]
+                'head' => $this->parseHead($xpath),
+                'body' => $bodyNode ? ($this->parseElement($bodyNode) ?? []) : [],
             ];
 
             // 4. Save Content
@@ -158,5 +139,183 @@ class ExtractPageContentJob implements ShouldQueue
             // We do NOT increment processed_pages yet.
             throw $e;
         }
+    }
+
+    private function parseHead(\DOMXPath $xpath): array
+    {
+        $head = [];
+
+        if ($title = $xpath->query('//head/title')->item(0)) {
+            $head['title'] = trim($title->textContent);
+        }
+
+        if ($canonical = $xpath->query('//head/link[@rel="canonical"]')->item(0)) {
+            $head['canonical'] = $canonical->getAttribute('href');
+        }
+
+        $relevantRels = ['alternate', 'prev', 'next', 'author', 'license', 'amphtml'];
+        $links = [];
+        foreach ($xpath->query('//head/link[@href]') as $link) {
+            /** @var \DOMElement $link */
+            $rel = $link->getAttribute('rel');
+            if (!in_array($rel, $relevantRels)) {
+                continue;
+            }
+            $entry = array_filter([
+                'rel'      => $rel,
+                'href'     => $link->getAttribute('href'),
+                'hreflang' => $link->getAttribute('hreflang') ?: null,
+                'type'     => $link->getAttribute('type') ?: null,
+                'title'    => $link->getAttribute('title') ?: null,
+            ]);
+            if ($entry) {
+                $links[] = $entry;
+            }
+        }
+        if ($links) {
+            $head['links'] = $links;
+        }
+
+        $metas = [];
+        foreach ($xpath->query('//head/meta') as $meta) {
+            /** @var \DOMElement $meta */
+            $key = $meta->getAttribute('property') ?: $meta->getAttribute('name');
+            $content = $meta->getAttribute('content');
+            if ($key && $content) {
+                $metas[$key] = $content;
+            }
+        }
+        if ($metas) {
+            $head['meta'] = $metas;
+        }
+
+        $ldJsonItems = [];
+        foreach ($xpath->query('//head/script[@type="application/ld+json"]') as $script) {
+            $parsed = json_decode(trim($script->textContent), true);
+            if ($parsed) {
+                $ldJsonItems[] = $parsed;
+            }
+        }
+        if ($ldJsonItems) {
+            $head['ld+json'] = $ldJsonItems;
+        }
+
+        return $head;
+    }
+
+    private function parseElement(\DOMNode $node): mixed
+    {
+        if (!($node instanceof \DOMElement)) {
+            return null;
+        }
+
+        $tagName = strtolower($node->nodeName);
+
+        if ($tagName === 'iframe') {
+            $result = array_filter([
+                'src' => $node->getAttribute('src'),
+                'title' => $node->getAttribute('title'),
+            ]);
+            return $result ?: null;
+        }
+
+        if ($tagName === 'picture') {
+            foreach ($node->childNodes as $child) {
+                if ($child instanceof \DOMElement && strtolower($child->nodeName) === 'img') {
+                    return $this->parseElement($child);
+                }
+            }
+            return null;
+        }
+
+        if ($tagName === 'img') {
+            $src = $node->getAttribute('src') ?: $node->getAttribute('data-src');
+            if (!$src) {
+                return null;
+            }
+            $result = ['src' => $src];
+            foreach (['alt', 'title', 'width', 'height', 'loading', 'srcset'] as $attr) {
+                if ($value = $node->getAttribute($attr)) {
+                    $result[$attr] = $value;
+                }
+            }
+            return $result;
+        }
+
+        if ($tagName === 'a') {
+            $result = [];
+            if ($href = $node->getAttribute('href')) {
+                $result['href'] = $href;
+            }
+            foreach (['rel', 'target', 'title'] as $attr) {
+                if ($value = $node->getAttribute($attr)) {
+                    $result[$attr] = $value;
+                }
+            }
+            if ($text = trim($node->textContent)) {
+                $result['text'] = $text;
+            }
+            return $result ?: null;
+        }
+
+        $childResults = [];
+        $textParts = [];
+
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $text = trim($child->nodeValue ?? '');
+                if ($text !== '') {
+                    $textParts[] = $text;
+                }
+            } elseif ($child->nodeType === XML_ELEMENT_NODE && $child instanceof \DOMElement) {
+                $childTag = strtolower($child->nodeName);
+
+                if (in_array($childTag, ['style', 'noscript'])) {
+                    continue;
+                }
+
+                if ($childTag === 'script') {
+                    if ($child->getAttribute('type') === 'application/ld+json') {
+                        $parsed = json_decode(trim($child->textContent), true);
+                        if ($parsed) {
+                            $childResults[] = ['ld+json', $parsed];
+                        }
+                    }
+                    continue;
+                }
+
+                $childResult = $this->parseElement($child);
+                if ($childResult !== null) {
+                    $childResults[] = [$childTag, $childResult];
+                }
+            }
+        }
+
+        // Leaf node — return its text content
+        if (empty($childResults)) {
+            $text = implode(' ', $textParts);
+            return $text !== '' ? $text : null;
+        }
+
+        // Count tag occurrences so duplicates become arrays
+        $tagCounts = [];
+        foreach ($childResults as [$tag]) {
+            $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + 1;
+        }
+
+        $result = [];
+        if ($textParts) {
+            $result['_text'] = implode(' ', $textParts);
+        }
+
+        foreach ($childResults as [$tag, $value]) {
+            if ($tagCounts[$tag] > 1) {
+                $result[$tag][] = $value;
+            } else {
+                $result[$tag] = $value;
+            }
+        }
+
+        return $result;
     }
 }

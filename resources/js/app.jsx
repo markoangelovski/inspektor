@@ -2,6 +2,7 @@ import "./bootstrap";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import PagesFlow from "./pages/PagesFlow";
+import JsonViewer from "./pages/JsonViewer";
 import "reactflow/dist/style.css";
 
 const mountedRoots = new WeakMap();
@@ -37,3 +38,20 @@ function mountPagesFlow(pages, selectedPageId = null) {
 document.addEventListener("pages-updated", (event) =>
     mountPagesFlow(event.detail[0].pages, event.detail[0].selectedPageId)
 );
+
+function mountJsonViewer(data) {
+    const el = document.getElementById("json-viewer-root");
+    if (!el) return;
+
+    let root = mountedRoots.get(el);
+    if (!root) {
+        root = createRoot(el);
+        mountedRoots.set(el, root);
+    }
+
+    root.render(<JsonViewer data={data} />);
+}
+
+document.addEventListener("viewer-opened", (event) => {
+    mountJsonViewer(event.detail[0]?.content ?? {});
+});

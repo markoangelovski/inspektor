@@ -20,6 +20,11 @@ return new class extends Migration
             $table->ulid('id')->primary();
 
             $table->ulid('page_id')->index();
+            $table
+                ->foreign('page_id')
+                ->references('id')
+                ->on('pages')
+                ->cascadeOnDelete();
             $table->string('extractor_version', 64)->index();
 
             $table->jsonb('content');

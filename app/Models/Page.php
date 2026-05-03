@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Domain\ContentExtraction\Models\PageContent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Page extends Model
 {
@@ -25,5 +28,20 @@ class Page extends Model
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
+    }
+
+    public function pageContents(): HasMany
+    {
+        return $this->hasMany(PageContent::class);
+    }
+
+    public function latestContent(): HasOne
+    {
+        return $this->hasOne(PageContent::class)->latestOfMany('extracted_at');
+    }
+
+    public function getContentAttribute(): ?array
+    {
+        return $this->latestContent?->content;
     }
 }

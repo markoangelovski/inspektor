@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages;
 
+use App\Domain\ContentExtraction\Models\PageContent;
 use App\Models\Page;
 use App\Models\Website;
 use Livewire\Component;
@@ -114,8 +115,9 @@ class Listing extends Component
 
     public function openViewer(string $pageId): void
     {
-        $this->viewerPage = Page::findOrFail($pageId);
+        $this->viewerPage = Page::with('latestContent')->findOrFail($pageId);
         $this->viewerOpen = true;
+        $this->dispatch('viewer-opened', ['content' => $this->viewerPage->content]);
     }
 
     public function closeViewer(): void

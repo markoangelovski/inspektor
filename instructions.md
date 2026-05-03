@@ -26,6 +26,8 @@ php artisan livewire:make Projects/FormModal
 
 php artisan make:class Services/ProjectService
 
+php artisan migrate:fresh
+
 Add to app/Providers/AppServiceProvider.php for deployment on Azure Web App
 public function boot(): void
 {

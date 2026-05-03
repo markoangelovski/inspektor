@@ -43,7 +43,7 @@
                     <div class="mb-3 text-gray-500 dark:text-zinc-400">Extracted Content:</div>
                     <div
                         class="rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-950 p-4 overflow-auto text-xs">
-                        <pre class="text-gray-800 dark:text-zinc-200 whitespace-pre-wrap">{{ json_encode($viewerPage->content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                        <div id="json-viewer-root" wire:ignore></div>
                     </div>
                 </div>
             @else
