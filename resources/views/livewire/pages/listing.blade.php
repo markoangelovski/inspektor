@@ -8,7 +8,15 @@
         <flux:breadcrumbs.item>Pages</flux:breadcrumbs.item>
     </flux:breadcrumbs>
 
-    <x-page-header :name="$website->name" :url="$website->url" />
+    <x-page-header :name="$website->name" :url="$website->url">
+        <flux:dropdown>
+            <flux:button icon:trailing="ellipsis-vertical" class="cursor-pointer"></flux:button>
+
+            <flux:menu>
+                <flux:menu.item icon="arrow-down-tray" class="cursor-pointer" wire:click="downloadCsv">Download as CSV</flux:menu.item>
+            </flux:menu>
+        </flux:dropdown>
+    </x-page-header>
 
     <div class="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         {{-- Header --}}

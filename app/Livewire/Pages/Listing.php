@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Pages;
 
-use App\Domain\ContentExtraction\Models\PageContent;
 use App\Models\Page;
 use App\Models\Website;
 use Livewire\Component;
@@ -123,6 +122,33 @@ class Listing extends Component
     public function closeViewer(): void
     {
         $this->viewerOpen = false;
+    }
+
+    public function downloadCsv(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $pages = $this->website
+            ->pages()
+            ->when(
+                $this->search !== '',
+                fn($query) => $query->where('path', 'like', '%' . $this->search . '%')
+            )
+            ->orderBy('path')
+            ->get();
+
+        $filename = str($this->website->name)->slug() . '-' . now()->format('Ymdhms') . '.csv';
+
+        return response()->streamDownload(function () use ($pages) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Path', 'Slug', 'Date Created'], escape: '');
+            foreach ($pages as $page) {
+                fputcsv($handle, [
+                    $page->path,
+                    $page->slug,
+                    $page->created_at->format('Y-m-d H:i'),
+                ], escape: '');
+            }
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function mount(Website $website): void
