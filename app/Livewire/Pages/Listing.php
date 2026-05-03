@@ -139,9 +139,10 @@ class Listing extends Component
 
         return response()->streamDownload(function () use ($pages) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Path', 'Slug', 'Date Created'], escape: '');
+            fputcsv($handle, ['URL', 'Path', 'Slug', 'Date Created'], escape: '');
             foreach ($pages as $page) {
                 fputcsv($handle, [
+                    $page->url,
                     $page->path,
                     $page->slug,
                     $page->created_at->format('Y-m-d H:i'),
