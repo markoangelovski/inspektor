@@ -33,18 +33,17 @@ class ProcessPages implements ShouldQueue
         }
 
         try {
-            $allUrls = [];
+            $allPages = [];
 
             foreach ($website->sitemaps as $sitemap) {
-                $urls = $pagesFetcher->fetchFromSitemap($sitemap->url);
-                $allUrls = array_merge($allUrls, $urls);
+                $pages = $pagesFetcher->fetchFromSitemap($sitemap->url);
+                foreach ($pages as $page) {
+                    $allPages[$page['url']] = $page; // deduplicate by URL
+                }
             }
 
-            // Deduplicate
-            $allUrls = array_values(array_unique($allUrls));
-
             // Bulk store pages
-            $storedCount = $storePages->execute($website, $allUrls);
+            $storedCount = $storePages->execute($website, array_values($allPages));
 
             // Update website stats
             $website->update([

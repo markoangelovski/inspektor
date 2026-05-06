@@ -21,6 +21,8 @@
                         <tr class="border-b border-gray-200 dark:border-zinc-800">
                             <th class="pb-2 pr-4">URL</th>
                             <th class="pb-2 pr-4">Created</th>
+                            <th class="pb-2 pr-4">Updated</th>
+                            <th class="pb-2 pr-4">Last modified</th>
                         </tr>
                     </thead>
                 </table>
@@ -39,8 +41,14 @@
                                         </a>
                                     </td>
                                     <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
-                                        {{ $sitemap->created_at->format('Y-m-d H:i') }}</td>
-
+                                        {{ $sitemap->created_at->format('Y-m-d H:i') }}
+                                    </td>
+                                    <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
+                                        {{ $sitemap->updated_at->format('Y-m-d H:i') }}
+                                    </td>
+                                    <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
+                                        {{ $sitemap->lastmod?->format('Y-m-d H:i') ?? '—' }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

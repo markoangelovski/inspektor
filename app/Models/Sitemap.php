@@ -15,7 +15,12 @@ class Sitemap extends Model
 
     protected $fillable = [
         'url',
+        'lastmod',
         'website_id',
+    ];
+
+    protected $casts = [
+        'lastmod' => 'datetime',
     ];
 
     /**

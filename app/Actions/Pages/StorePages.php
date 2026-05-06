@@ -5,20 +5,12 @@ namespace App\Actions\Pages;
 use App\Models\Page;
 use App\Models\Website;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class StorePages
 {
-    /**
-     * Store an array of page URLs for the given website.
-     *
-     * @param Website $website
-     * @param string[] $urls
-     * @return int Number of pages inserted
-     */
-    public function execute(Website $website, array $urls): int
+    public function execute(Website $website, array $pages): int
     {
-        if (empty($urls)) {
+        if (empty($pages)) {
             return 0;
         }
 
@@ -26,8 +18,9 @@ class StorePages
 
         $now = now();
 
-        foreach ($urls as $url) {
-            $url = trim($url);
+        foreach ($pages as $page) {
+            $url = trim($page['url']);
+            $lastmod = $page['lastmod'] ?? null;
 
             if ($url === '') {
                 continue;
@@ -67,13 +60,14 @@ class StorePages
                 'path' => $path,
                 'slug' => $slug,
                 'parent_path' => $parentPath,
+                'lastmod' => $lastmod,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
 
         // Bulk insert, ignore duplicates (unique per website_id + url)
-        Page::insertOrIgnore($rows);
+        Page::upsert($rows, ['website_id', 'url'], ['lastmod', 'updated_at']);
 
         return count($rows);
     }

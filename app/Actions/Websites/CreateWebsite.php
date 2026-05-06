@@ -2,18 +2,15 @@
 
 namespace App\Actions\Websites;
 
+use App\Actions\Sitemaps\FetchSitemaps;
 use App\Jobs\ProcessWebsiteMetadata;
 use App\Models\Website;
 use Illuminate\Support\Facades\Auth;
 
 class CreateWebsite
 {
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
+    public function __construct(private FetchSitemaps $fetchSitemaps)
     {
-        //
     }
 
     public function execute($websiteData): Website
@@ -25,6 +22,8 @@ class CreateWebsite
         ]);
 
         ProcessWebsiteMetadata::dispatch($website->id);
+
+        $this->fetchSitemaps->execute($website);
 
         return $website;
     }

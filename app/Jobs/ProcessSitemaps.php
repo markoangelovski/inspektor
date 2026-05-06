@@ -7,7 +7,7 @@ use App\Models\Sitemap;
 use App\Models\Website;
 use Illuminate\Support\Str;
 use App\Services\SitemapsFetcher;
-use Illuminate\Support\Facades\DB;
+use App\Jobs\ProcessPages;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -57,15 +57,16 @@ class ProcessSitemaps implements ShouldQueue
 
         $now = now();
 
-        $rows = collect($sitemaps)->map(fn(string $url) => [
+        $rows = collect($sitemaps)->map(fn(array $sitemap) => [
             'id' => strtolower(Str::ulid()),
             'website_id' => $website->id,
-            'url' => $url,
+            'url' => $sitemap['url'],
+            'lastmod' => $sitemap['lastmod'],
             'created_at' => $now,
             'updated_at' => $now,
         ])->all();
 
-        Sitemap::insertOrIgnore($rows);
+        Sitemap::upsert($rows, ['website_id', 'url'], ['lastmod', 'updated_at']);
 
         Website::whereKey($this->websiteId)->update([
             'sitemaps_fetched' => true,
@@ -74,6 +75,8 @@ class ProcessSitemaps implements ShouldQueue
             'sitemaps_message' => 'ok',
             'sitemaps_processing' => false,
         ]);
+
+        ProcessPages::dispatch($this->websiteId);
     }
 
     public function failed(Throwable $e): void

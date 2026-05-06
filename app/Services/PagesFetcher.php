@@ -9,9 +9,9 @@ use Throwable;
 class PagesFetcher
 {
     /**
-     * Fetch page URLs from a leaf sitemap.
-     *
-     * If the sitemap is a sitemap index, it is skipped.
+     * Fetch page entries from a leaf sitemap.
+     * Returns array of ['url' => string, 'lastmod' => ?string].
+     * Sitemap index files are skipped.
      */
     public function fetchFromSitemap(string $sitemapUrl): array
     {
@@ -30,18 +30,12 @@ class PagesFetcher
                 return [];
             }
 
-            /**
-             * Sitemap index → skip
-             * <sitemapindex>
-             */
+            // Sitemap index → skip
             if (isset($xml->sitemap)) {
                 return [];
             }
 
-            /**
-             * Leaf sitemap → extract URLs
-             * <urlset>
-             */
+            // Leaf sitemap → extract URLs with lastmod
             if (! isset($xml->url)) {
                 return [];
             }
@@ -51,14 +45,17 @@ class PagesFetcher
             foreach ($xml->url as $urlNode) {
                 $pageUrl = trim((string) $urlNode->loc);
 
-                if ($pageUrl !== '') {
-                    $pages[] = $pageUrl;
+                if ($pageUrl === '') {
+                    continue;
                 }
+
+                $lastmod = isset($urlNode->lastmod) ? (trim((string) $urlNode->lastmod) ?: null) : null;
+
+                $pages[] = ['url' => $pageUrl, 'lastmod' => $lastmod];
             }
 
             return $pages;
         } catch (Throwable $e) {
-            // Fail per sitemap, not per job
             Log::error(
                 "Error processing sitemap {$sitemapUrl}: {$e->getMessage()}",
                 ['exception' => $e]

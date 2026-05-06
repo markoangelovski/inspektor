@@ -13,7 +13,8 @@
             <flux:button icon:trailing="ellipsis-vertical" class="cursor-pointer"></flux:button>
 
             <flux:menu>
-                <flux:menu.item icon="arrow-down-tray" class="cursor-pointer" wire:click="downloadCsv">Download as CSV</flux:menu.item>
+                <flux:menu.item icon="arrow-down-tray" class="cursor-pointer" wire:click="downloadCsv">Download as CSV
+                </flux:menu.item>
             </flux:menu>
         </flux:dropdown>
     </x-page-header>
@@ -80,7 +81,9 @@
                         <tr class="border-b border-gray-200 dark:border-zinc-800">
                             <th class="pb-2 pr-4">Path</th>
                             <th class="pb-2 pr-4">Slug</th>
-                            <th class="pb-2 pr-4">Date Created</th>
+                            <th class="pb-2 pr-4">Created</th>
+                            <th class="pb-2 pr-4">Updated</th>
+                            <th class="pb-2 pr-4">Last modified</th>
                             <th class="pb-2 text-center">View Content</th>
                         </tr>
                     </thead>
@@ -97,7 +100,14 @@
                                     <td class="py-3 pr-4">{{ $page->path }}</td>
                                     <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">{{ $page->slug }}</td>
                                     <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
-                                        {{ $page->created_at->format('Y-m-d H:i') }}</td>
+                                        {{ $page->created_at->format('Y-m-d H:i') }}
+                                    </td>
+                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
+                                        {{ $page->updated_at->format('Y-m-d H:i') }}
+                                    </td>
+                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
+                                        {{ $page->lastmod?->format('Y-m-d H:i') ?? '—' }}
+                                    </td>
                                     <td class="py-3 text-center">
                                         <button type="button" wire:click.stop="openViewer('{{ $page->id }}')"
                                             class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 dark:text-zinc-400 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors cursor-pointer"

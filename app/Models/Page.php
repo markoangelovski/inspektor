@@ -22,6 +22,11 @@ class Page extends Model
         'path',
         'parent_path',
         'slug',
+        'lastmod',
+    ];
+
+    protected $casts = [
+        'lastmod' => 'datetime',
     ];
 
 
