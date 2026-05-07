@@ -26,12 +26,6 @@
                     :current="request()->routeIs('websites.listing')" wire:navigate>{{ __('Websites') }}
                 </flux:navlist.item>
 
-                <flux:navlist.item icon="map" :href="isset($website) ? route('sitemaps.listing', $website) : null"
-                    :disabled="!isset($website)" :current="isset($website) && request()->routeIs('sitemaps.listing')"
-                    title="{{ !isset($website) ? __('Select a website first') : null }}" wire:navigate
-                    class="disabled:text-gray-500 hover:disabled:text-gray-500 hover:disabled:bg-inherit">
-                    {{ __('Sitemaps') }}
-                </flux:navlist.item>
 
                 <flux:navlist.item icon="document" :href="isset($website) ? route('pages.listing', $website) : null"
                     :disabled="!isset($website)" :current="isset($website) && request()->routeIs('pages.listing')"

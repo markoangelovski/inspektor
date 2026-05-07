@@ -147,7 +147,7 @@ class Listing extends Component
                     $page->slug,
                     $page->created_at->format('Y-m-d H:i'),
                     $page->updated_at->format('Y-m-d H:i'),
-                    $page->lastmod->format('Y-m-d H:i'),
+                    $page->lastmod?->format('Y-m-d H:i') ?? '-',
                 ], escape: '');
             }
             fclose($handle);

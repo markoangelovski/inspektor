@@ -5,6 +5,7 @@ namespace App\Livewire\Websites;
 use Flux\Flux;
 use App\Models\Website;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\On;
 use App\Actions\Pages\FetchPages;
 use Livewire\Attributes\Validate;
@@ -14,6 +15,7 @@ use App\Actions\Websites\DeleteWebsite;
 
 class Detail extends Component
 {
+    use WithPagination;
     public Website $website;
 
     public bool $fetchingSitemaps = false;
@@ -32,6 +34,25 @@ class Detail extends Component
     {
         $this->website = $website;
         $this->fetchingSitemaps = $website->sitemaps_processing;
+        $this->fetchingPages = $website->pages_processing
+            || ($website->sitemaps_fetched && !$website->pages_fetched);
+    }
+
+    public function refreshData(): void
+    {
+        $this->website->refresh();
+
+        if (!$this->website->sitemaps_processing) {
+            $this->fetchingSitemaps = false;
+        }
+
+        // Hold fetchingPages true through the gap between sitemaps completing
+        // and the pages job starting (they are auto-queued in sequence).
+        if ($this->website->sitemaps_fetched && !$this->website->pages_fetched) {
+            $this->fetchingPages = true;
+        } elseif ($this->website->pages_fetched) {
+            $this->fetchingPages = false;
+        }
     }
 
     #[On('website-edited')]
@@ -65,9 +86,6 @@ class Detail extends Component
 
         // 3. Optional UX feedback
         $this->fetchingSitemaps = true;
-
-        // Optional: flash message
-        session()->flash('status', 'Sitemap fetch has been queued.');
     }
 
     public function addSitemap(AddSitemap $addSitemap): void
@@ -90,9 +108,6 @@ class Detail extends Component
 
         // Close modal
         Flux::modal('add-sitemap')->close();
-
-        // Optional UX feedback
-        session()->flash('status', 'Sitemap added.');
     }
 
     public function fetchPages(FetchPages $fetchPages): void
@@ -110,13 +125,12 @@ class Detail extends Component
 
         // Trigger the pipeline
         $fetchPages->execute($this->website);
-
-        // UX feedback (optional)
-        session()->flash('status', 'Page fetching has been queued.');
     }
 
     public function render()
     {
-        return view('livewire.websites.detail');
+        return view('livewire.websites.detail', [
+            'sitemaps' => $this->website->sitemaps()->latest()->paginate(10),
+        ]);
     }
 }

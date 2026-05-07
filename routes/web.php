@@ -2,7 +2,6 @@
 
 use App\Livewire\Websites\Listing as WebsitesListing;
 use App\Livewire\Websites\Detail as WebsitesDetail;
-use App\Livewire\Sitemaps\Listing as SitemapsListing;
 use App\Livewire\Pages\Listing as PagesListing;
 use App\Livewire\Pages\Expand as PagesExpand;
 use App\Livewire\Search\Listing as SearchListing;
@@ -38,8 +37,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Content Inspector routes:
     Route::get("/websites", WebsitesListing::class)->name("websites.listing");
-    Route::get("/websites/{website}", WebsitesDetail::class)->name("websites.detail");
-    Route::get("/websites/{website}/sitemaps", SitemapsListing::class)->name("sitemaps.listing");
+    Route::get("/websites/{website}/info", WebsitesDetail::class)->name("websites.detail");
     Route::get("/websites/{website}/pages", PagesListing::class)->name("pages.listing");
     Route::get("/websites/{website}/pages/expand", PagesExpand::class)->name("pages.expand");
 

@@ -1,4 +1,13 @@
 <div class="space-y-6">
+    @if (
+        !$website->metadata_processed ||
+            $fetchingSitemaps ||
+            $website->sitemaps_processing ||
+            $fetchingPages ||
+            $website->pages_processing)
+        <div wire:poll.3s="refreshData"></div>
+    @endif
+
     <flux:breadcrumbs class="mb-6">
         <flux:breadcrumbs.item href="{{ route('websites.listing') }}" wire:navigate class="hover:underline">Websites
         </flux:breadcrumbs.item>
@@ -51,318 +60,311 @@
         </div>
     </flux:modal>
 
-    {{-- Website metadata --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {{-- Nav tabs --}}
+    <div x-data="{ activeTab: 'info' }">
+        <div class="flex gap-4 h-10 border-b border-zinc-800/10 dark:border-white/20" role="tablist">
 
-        {{-- Image --}}
-        <div>
-            <span class="block text-sm mb-2">Image</span>
+            <button type="button" @click="activeTab = 'info'; window.history.pushState({}, '', '{{ route('websites.detail', $website) }}')"
+                :class="activeTab === 'info' ? 'border-[var(--color-accent-content)] text-[var(--color-accent-content)]' :
+                    'border-transparent text-zinc-400 dark:text-white/50 hover:text-zinc-800 dark:hover:text-white'"
+                class="flex whitespace-nowrap gap-2 items-center px-2 -mb-px border-b-[2px] text-sm font-medium transition-colors cursor-pointer"
+                role="tab" :aria-selected="activeTab === 'info'" :tabindex="activeTab === 'info' ? 0 : -1">
+                <flux:icon.information-circle class="shrink-0 size-5" />
+                Info
+            </button>
 
-            <div class="w-full aspect-video rounded-lg border border-gray-200 overflow-hidden">
-                @if (!$website->metadata_processed)
-                    <div
-                        class="w-full h-full bg-gray-200 rounded animate-pulse flex items-center justify-center text-gray-400 text-sm">
-                        Metadata processing in progress...
-                    </div>
-                @elseif ($website->meta_image_url)
-                    <img src="{{ $website->meta_image_url }}" class="w-full h-full object-cover" alt="Meta image">
-                @else
-                    <div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                        No image
-                    </div>
-                @endif
-            </div>
-        </div>
+            <button type="button" @click="activeTab = 'pages'"
+                :class="activeTab === 'pages' ? 'border-[var(--color-accent-content)] text-[var(--color-accent-content)]' :
+                    'border-transparent text-zinc-400 dark:text-white/50 hover:text-zinc-800 dark:hover:text-white'"
+                class="flex whitespace-nowrap gap-2 items-center px-2 -mb-px border-b-[2px] text-sm font-medium transition-colors cursor-pointer"
+                role="tab" :aria-selected="activeTab === 'pages'" :tabindex="activeTab === 'pages' ? 0 : -1">
+                <flux:icon.document-text class="shrink-0 size-5" />
+                Pages
+            </button>
 
-        <div class="space-y-4">
-
-            {{-- Title --}}
-            <div>
-                <span class="block text-sm mb-2">Title</span>
-
-                @if (!$website->metadata_processed)
-                    <div
-                        class="h-12 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center text-gray-400 text-sm">
-                        Metadata processing in progress...</div>
-                @else
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-500 border rounded-lg">
-                        {{ $website->meta_title ?? $website->name }}
-                    </div>
-                @endif
-            </div>
-
-            {{-- Description --}}
-            <div>
-                <span class="block text-sm mb-2">Description</span>
-
-                @if (!$website->metadata_processed)
-                    <div class="space-y-2">
-                        <div
-                            class="h-28 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center text-gray-400 text-sm">
-                            Metadata processing in progress..</div>
-                    </div>
-                @else
-                    <div
-                        class="px-4 py-3 bg-gray-50 dark:bg-gray-500 border rounded-lg h-28 overflow-hidden overflow-y-scroll">
-                        {{ $website->meta_description ?? '—' }}
-                    </div>
-                @endif
-            </div>
+            <button type="button" @click="activeTab = 'scans'"
+                :class="activeTab === 'scans' ? 'border-[var(--color-accent-content)] text-[var(--color-accent-content)]' :
+                    'border-transparent text-zinc-400 dark:text-white/50 hover:text-zinc-800 dark:hover:text-white'"
+                class="flex whitespace-nowrap gap-2 items-center px-2 -mb-px border-b-[2px] text-sm font-medium transition-colors cursor-pointer"
+                role="tab" :aria-selected="activeTab === 'scans'" :tabindex="activeTab === 'scans' ? 0 : -1">
+                <flux:icon.document-magnifying-glass class="shrink-0 size-5" />
+                Scans
+            </button>
 
         </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {{-- ================== SITEMAPS CARD ================== --}}
-        <x-card class="{{ !$website->sitemaps_fetched ? 'opacity-60' : '' }}">
+        <div x-show="activeTab === 'info'" role="tabpanel" tabindex="0" class="space-y-6 pt-6">
 
-            {{-- Header --}}
-            <div class="px-6 pt-6 flex items-center space-x-2">
-                <flux:icon.map class="size-4" />
-                @if ($website->sitemaps_fetched)
-                    <a href="{{ route('sitemaps.listing', $website['id'] ?? null) }}"
-                        class="text-left font-semibold hover:underline" wire:navigate>
-                        Sitemaps
-                    </a>
-                @else
-                    <span class="font-semibold">
-                        Sitemaps
-                    </span>
-                @endif
-            </div>
+            {{-- Website metadata --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- Content --}}
-            <div class="px-6 pb-6 pt-4 space-y-4">
+                {{-- Image --}}
+                <div class="">
+                    <span class="block text-sm mb-2">Image</span>
 
-                @if (!$website->sitemaps_fetched)
-                    {{-- Not fetched --}}
-                    <div class="space-y-4">
-                        <div class="text-center py-4">
-                            <div class="text-3xl text-blue-600 mb-1">
-                                0
+                    <div class="w-full aspect-video rounded-lg border border-gray-200 overflow-hidden">
+                        @if (!$website->metadata_processed)
+                            <div
+                                class="w-full h-full bg-gray-200 rounded animate-pulse flex items-center justify-center text-gray-400 text-sm">
+                                Metadata processing in progress...
                             </div>
-                            <p class="text-sm">
-                                Sitemaps not fetched
-                            </p>
-                        </div>
-
-                        <flux:button wire:click="fetchSitemaps" wire:loading.attr="disabled"
-                            :disabled="$fetchingSitemaps"
-                            class="w-full inline-flex items-center justify-center h-9 rounded-md px-4 text-sm font-medium text-white transition cursor-pointer">
-                            @if ($fetchingSitemaps)
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4 animate-spin" />
-                                    <span>
-                                        Fetching sitemaps…
-                                    </span>
-                                </div>
-                            @else
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrows-right-left class="size-4" />
-                                    <span>
-                                        Fetch sitemaps
-                                    </span>
-                                </div>
-                            @endif
-                        </flux:button>
-
-                    </div>
-                @else
-                    {{-- Fetched --}}
-                    <div class="space-y-4">
-
-                        <div class="text-center py-4">
-                            <div class="text-3xl text-blue-600 mb-1">
-                                {{ $website['sitemaps_count'] ?? 0 }}
+                        @elseif ($website->meta_image_url)
+                            <img src="{{ $website->meta_image_url }}" class="w-full h-full object-cover"
+                                alt="Meta image">
+                        @else
+                            <div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                                No image
                             </div>
-                            <p class="text-sm text-gray-500">
-                                {{ ($website['sitemaps_count'] ?? 0) === 1 ? 'Sitemap' : 'Sitemaps' }} found
-                            </p>
-                        </div>
-
-                        <flux:button wire:click="fetchSitemaps" wire:loading.attr="disabled"
-                            :disabled="$fetchingSitemaps"
-                            class="w-full inline-flex items-center justify-center h-9 rounded-md px-4 text-sm font-medium text-white transition cursor-pointer">
-                            @if ($fetchingSitemaps)
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4 animate-spin" />
-                                    <span>
-                                        Refreshing sitemaps…
-                                    </span>
-                                </div>
-                            @else
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4" />
-                                    <span>
-                                        Refresh sitemaps
-                                    </span>
-                                </div>
-                            @endif
-                        </flux:button>
-
-                        @if (!empty($website['sitemaps_last_sync']))
-                            <p class="text-xs text-gray-500 text-center pt-2 border-t border-gray-200"
-                                title="{{ $website->sitemaps_last_sync }}">
-                                Last synced: {{ $website->sitemaps_last_sync->diffForHumans() }}
-                            </p>
                         @endif
-
                     </div>
-                @endif
+                </div>
 
-                {{-- Add sitemap manually --}}
+                <div class="space-y-4">
 
-                <flux:modal.trigger name="add-sitemap">
-                    <flux:button icon="plus" class="cursor-pointer w-full">
-                        Add sitemap
-                    </flux:button>
-                </flux:modal.trigger>
+                    {{-- Title --}}
+                    <div>
+                        <span class="block text-sm mb-2">Title</span>
 
-                <flux:modal name="add-sitemap" class="md:w-96">
-                    <div class="space-y-6">
-                        <div>
-                            <flux:heading size="lg">Add new sitemap</flux:heading>
+                        @if (!$website->metadata_processed)
+                            <div
+                                class="h-12 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center text-gray-400 text-sm">
+                                Metadata processing in progress...</div>
+                        @else
+                            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-500 border rounded-lg">
+                                {{ $website->meta_title ?? $website->name }}
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Description --}}
+                    <div>
+                        <span class="block text-sm mb-2">Description</span>
+
+                        @if (!$website->metadata_processed)
+                            <div class="space-y-2">
+                                <div
+                                    class="h-28 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center text-gray-400 text-sm">
+                                    Metadata processing in progress..</div>
+                            </div>
+                        @else
+                            <div
+                                class="px-4 py-3 bg-gray-50 dark:bg-gray-500 border rounded-lg h-28 overflow-hidden overflow-y-scroll">
+                                {{ $website->meta_description ?? '—' }}
+                            </div>
+                        @endif
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {{-- ================== SITEMAPS CARD ================== --}}
+                <div class="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-800 p-6">
+
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.map class="size-[18px] text-gray-400 dark:text-zinc-400" />
+                            <h3 class="text-lg font-medium">Sitemaps</h3>
                         </div>
-
-                        <flux:input wire:model.defer="sitemapUrl" label="Sitemap"
-                            placeholder="https://example.com/sitemap.xml" />
-
-                        <div class="flex">
-                            <flux:spacer />
-                            <flux:button wire:click="addSitemap" wire:loading.attr="disabled" type="submit"
-                                variant="primary" class="cursor-pointer">Save changes
+                        <div class="flex gap-2">
+                            <flux:modal.trigger name="add-sitemap">
+                                <flux:button icon="plus" size="sm" class="cursor-pointer">
+                                    Add Sitemap
+                                </flux:button>
+                            </flux:modal.trigger>
+                            <flux:button wire:click="fetchSitemaps" wire:loading.attr="disabled"
+                                :disabled="$fetchingSitemaps" size="sm" class="cursor-pointer">
+                                <span class="flex items-center gap-1">
+                                    <flux:icon.arrow-path
+                                        class="size-4 {{ $fetchingSitemaps ? 'animate-spin' : '' }}" />
+                                    {{ $website->sitemaps_fetched ? 'Refresh' : 'Fetch' }}
+                                </span>
                             </flux:button>
                         </div>
                     </div>
-                </flux:modal>
 
-
-                @if ($website['sitemaps_message'] !== 'ok')
-                    <p class="text-xs text-center pt-2">
-                        {{ $website->sitemaps_message }}
-                    </p>
-                @endif
-
-            </div>
-        </x-card>
-
-        {{-- ================== PAGES CARD ================== --}}
-        <x-card class="{{ !$website->pages_fetched ? 'opacity-60' : '' }}">
-
-            {{-- Header --}}
-            <div class="px-6 pt-6 flex items-center space-x-2">
-                <flux:icon.document class="size-4" />
-                @if ($website->pages_fetched)
-                    <a href="{{ route('pages.listing', $website['id'] ?? null) }}"
-                        class="text-left font-semibold hover:underline" wire:navigate>
-                        Pages
-                    </a>
-                @else
-                    <span class="font-semibold">
-                        Pages
-                    </span>
-                @endif
-            </div>
-
-            {{-- Content --}}
-            <div class="px-6 pb-6 pt-4">
-
-                @if (!$website->pages_fetched)
-                    {{-- Not fetched --}}
-                    <div class="space-y-4">
-
-                        <div class="text-center py-4">
-                            <div class="text-3xl text-blue-600 mb-1">
-                                0
-                            </div>
-                            <p class="text-sm">
-                                Pages not fetched
-                            </p>
+                    {{-- Content --}}
+                    @if ($fetchingSitemaps)
+                        <div class="flex items-center gap-3">
+                            <flux:icon.arrow-path class="size-8 text-blue-400 animate-spin" />
+                            <span class="text-sm text-gray-400 dark:text-zinc-400">Fetching sitemaps...</span>
                         </div>
+                    @else
+                        <div class="text-5xl mb-2">{{ $website['sitemaps_count'] ?? 0 }}</div>
+                        <div class="text-sm text-gray-500 dark:text-zinc-500">Total sitemaps</div>
+                        @if (!empty($website['sitemaps_last_sync']))
+                            <div class="text-xs text-gray-400 dark:text-zinc-600 mt-1"
+                                title="{{ $website->sitemaps_last_sync }}">
+                                Last synced: {{ $website->sitemaps_last_sync->diffForHumans() }}
+                            </div>
+                        @endif
+                        @if ($website['sitemaps_message'] !== 'ok')
+                            <p class="text-xs text-gray-500 dark:text-zinc-500 mt-3">
+                                {{ $website->sitemaps_message }}
+                            </p>
+                        @endif
+                    @endif
 
-                        <flux:button wire:click="fetchPages" wire:loading.attr="disabled"
-                            :disabled="!$website->sitemaps_fetched || $fetchingPages || $website->pages_processing"
-                            class="w-full inline-flex items-center justify-center h-9 rounded-md px-4 text-sm font-medium text-white transition cursor-pointer">
-                            @if ($fetchingPages || $website->pages_processing)
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4 animate-spin" />
-                                    <span>
-                                        Fetching pages…
-                                    </span>
-                                </div>
+                    <flux:modal name="add-sitemap" class="md:w-96">
+                        <div class="space-y-6">
+                            <div>
+                                <flux:heading size="lg">Add new sitemap</flux:heading>
+                            </div>
+                            <flux:input wire:model.defer="sitemapUrl" label="Sitemap"
+                                placeholder="https://example.com/sitemap.xml" />
+                            <div class="flex">
+                                <flux:spacer />
+                                <flux:button wire:click="addSitemap" wire:loading.attr="disabled" type="submit"
+                                    variant="primary" class="cursor-pointer">Save changes
+                                </flux:button>
+                            </div>
+                        </div>
+                    </flux:modal>
+
+                </div>
+
+                {{-- ================== PAGES CARD ================== --}}
+                <div class="bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-800 p-6">
+
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.document class="size-[18px] text-gray-400 dark:text-zinc-400" />
+                            @if ($website->pages_fetched)
+                                <a href="{{ route('pages.listing', $website['id'] ?? null) }}"
+                                    class="text-lg font-medium hover:underline" wire:navigate>Pages</a>
                             @else
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrows-right-left class="size-4" />
-                                    <span>
-                                        Fetch pages
-                                    </span>
-                                </div>
+                                <h3 class="text-lg font-medium">Pages</h3>
                             @endif
-                        </flux:button>
+                        </div>
+                        <div class="flex gap-2">
+                            <flux:button wire:click="fetchPages" wire:loading.attr="disabled"
+                                :disabled="!$website->sitemaps_fetched || $fetchingPages || $website->pages_processing"
+                                size="sm" class="cursor-pointer">
+                                <span class="flex items-center gap-1">
+                                    <flux:icon.arrow-path
+                                        class="size-4 {{ $fetchingPages || $website->pages_processing ? 'animate-spin' : '' }}" />
+                                    {{ $website->pages_fetched ? 'Refresh' : 'Fetch' }}
+                                </span>
+                            </flux:button>
+                        </div>
+                    </div>
 
+                    {{-- Content --}}
+                    @if ($fetchingPages || $website->pages_processing)
+                        <div class="flex items-center gap-3">
+                            <flux:icon.arrow-path class="size-8 text-blue-400 animate-spin" />
+                            <span class="text-sm text-gray-400 dark:text-zinc-400">Fetching pages...</span>
+                        </div>
+                    @else
+                        <div class="text-5xl mb-2">{{ $website['pages_count'] ?? 0 }}</div>
+                        <div class="text-sm text-gray-500 dark:text-zinc-500">Total pages</div>
+                        @if (!empty($website['pages_last_sync']))
+                            <div class="text-xs text-gray-400 dark:text-zinc-600 mt-1"
+                                title="{{ $website->pages_last_sync }}">
+                                Last synced: {{ $website->pages_last_sync->diffForHumans() }}
+                            </div>
+                        @endif
                         @if (!$website->sitemaps_fetched)
-                            <p class="text-sm text-center">
+                            <p class="text-sm text-gray-500 dark:text-zinc-500 mt-2">
                                 Fetch sitemaps first
                             </p>
                         @endif
-                    </div>
-                @else
-                    {{-- Fetched --}}
-                    <div class="space-y-4">
+                    @endif
 
-                        <div class="text-center py-4">
-                            <div class="text-3xl text-blue-600 mb-1">
-                                {{ $website['pages_count'] ?? 0 }}
-                            </div>
-                            <p class="text-sm text-gray-500">
-                                {{ ($website['pages_count'] ?? 0) === 1 ? 'Page' : 'Pages' }} found
-                            </p>
-                        </div>
-
-                        <flux:button wire:click="fetchPages" wire:loading.attr="disabled"
-                            :disabled="!$website->sitemaps_fetched || $fetchingPages || $website->pages_processing"
-                            class="w-full inline-flex items-center justify-center h-9 rounded-md px-4 text-sm font-medium text-white transition cursor-pointer">
-                            @if ($fetchingPages || $website->pages_processing)
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4 animate-spin" />
-                                    <span>
-                                        Refreshing pages…
-                                    </span>
-                                </div>
-                            @else
-                                <div class="flex items-center space-x-2">
-                                    <flux:icon.arrow-path class="size-4" />
-                                    <span>
-                                        Refresh pages
-                                    </span>
-                                </div>
-                            @endif
-                        </flux:button>
-
-                        @if (!empty($website['pages_last_sync']))
-                            <p class="text-xs text-gray-500 text-center pt-2 border-t border-gray-200"
-                                title="{{ $website->pages_last_sync }}">
-                                Last synced: {{ $website->pages_last_sync->diffForHumans() }}
-                            </p>
-                        @endif
-                    </div>
-                @endif
-
+                </div>
 
             </div>
-        </x-card>
 
-        {{-- ================== CONTENT CARD ================== --}}
-        <livewire:content-extraction.status-card :website="$website" />
+            {{-- ================== SITEMAP URLS TABLE ================== --}}
+            <div
+                class="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+                <div class="px-6 pt-6 pb-3 border-b border-gray-200 dark:border-zinc-800">
+                    <h3 class="font-semibold">Sitemap URLs</h3>
+                </div>
+                <div class="overflow-auto">
+                    <div class="p-6">
+                        <table class="w-full text-sm table-fixed">
+                            <thead class="text-left text-gray-500 dark:text-zinc-400">
+                                <tr class="border-b border-gray-200 dark:border-zinc-800">
+                                    <th class="pb-2 pr-4">URL</th>
+                                    <th class="pb-2 pr-4">Created</th>
+                                    <th class="pb-2 pr-4">Updated</th>
+                                    <th class="pb-2 pr-4">Last modified</th>
+                                </tr>
+                            </thead>
+                        </table>
 
-    </div>
+                        <div class="overflow-y-auto" style="max-height: 400px;">
+                            <table class="w-full text-sm table-fixed">
+                                <tbody>
+                                    @if ($fetchingSitemaps || $website->sitemaps_processing)
+                                        @for ($i = 0; $i < 5; $i++)
+                                            <tr class="border-b border-gray-200 dark:border-zinc-800/50">
+                                                <td class="py-3 pr-4">
+                                                    <div class="h-4 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse w-3/4"></div>
+                                                </td>
+                                                <td class="py-3 pr-4">
+                                                    <div class="h-4 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse w-24"></div>
+                                                </td>
+                                                <td class="py-3 pr-4">
+                                                    <div class="h-4 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse w-24"></div>
+                                                </td>
+                                                <td class="py-3 pr-4">
+                                                    <div class="h-4 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse w-24"></div>
+                                                </td>
+                                            </tr>
+                                        @endfor
+                                    @else
+                                        @forelse ($sitemaps as $sitemap)
+                                            <tr
+                                                class="border-b border-gray-200 hover:bg-gray-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30 text-gray-700 dark:text-zinc-300">
+                                                <td class="py-3 pr-4">
+                                                    <a href="{{ $sitemap->url }}" target="_blank"
+                                                        rel="noopener noreferrer" class="hover:underline truncate block">
+                                                        {{ $sitemap->url }}
+                                                    </a>
+                                                </td>
+                                                <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
+                                                    {{ $sitemap->created_at->format('Y-m-d H:i') }}
+                                                </td>
+                                                <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
+                                                    {{ $sitemap->updated_at->format('Y-m-d H:i') }}
+                                                </td>
+                                                <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">
+                                                    {{ $sitemap->lastmod?->format('Y-m-d H:i') ?? '—' }}
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4"
+                                                    class="text-center py-8 text-gray-500 dark:text-zinc-500">
+                                                    No sitemaps found
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
 
-    @if (session('status'))
-        <div class="px-4 py-3  rounded bg-green-100 text-green-800">
-            {{ session('status') }}
+                        <div class="mt-4">
+                            {{ $sitemaps->links() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    @endif
 
-    <livewire:content-extraction.run-overview :website="$website" />
+        <div x-show="activeTab === 'pages'" role="tabpanel" tabindex="-1" class="pt-6">...</div>
+
+        <div x-show="activeTab === 'scans'" role="tabpanel" tabindex="-1" class="space-y-6 pt-6">
+            <livewire:content-extraction.status-card :website="$website" />
+            <livewire:content-extraction.run-overview :website="$website" />
+        </div>
+    </div>
 
 </div>
