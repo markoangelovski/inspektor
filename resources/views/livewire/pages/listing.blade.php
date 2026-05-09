@@ -1,14 +1,7 @@
 <div>
-    <flux:breadcrumbs class="mb-6">
-        <flux:breadcrumbs.item href="{{ route('websites.listing') }}" wire:navigate class="hover:underline">Websites
-        </flux:breadcrumbs.item>
-        <flux:breadcrumbs.item href="{{ route('websites.detail', $website) }}" wire:navigate class="hover:underline">
-            {{ $website->name }}
-        </flux:breadcrumbs.item>
-        <flux:breadcrumbs.item>Pages</flux:breadcrumbs.item>
-    </flux:breadcrumbs>
+    <x-inspektor.website-detail.breadcrumbs :website="$website" current="Pages" />
 
-    <x-page-header :name="$website->name" :url="$website->url">
+    <x-inspektor.website-detail.page-header :name="$website->name" :url="$website->url">
         <flux:dropdown>
             <flux:button icon:trailing="ellipsis-vertical" class="cursor-pointer"></flux:button>
 
@@ -17,14 +10,17 @@
                 </flux:menu.item>
             </flux:menu>
         </flux:dropdown>
-    </x-page-header>
+    </x-inspektor.website-detail.page-header>
 
-    <div class="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <x-inspektor.website-detail.page-nav-tabs :website="$website" />
+
+    {{-- Pages section --}}
+    <div class="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 mt-6">
         {{-- Header --}}
         <div class="p-4 border-b border-gray-200 dark:border-zinc-800">
             <div class="flex items-center justify-between mb-4 gap-4">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-zinc-100">
-                    Pages
+                    {{ $website->name }} pages
                 </h2>
 
                 <div class="flex items-center gap-4">
@@ -137,7 +133,7 @@
         </div>
 
         {{-- Drawer --}}
-        <x-inspector.page-viewer-drawer :viewer-page="$viewerPage" />
+        <x-inspektor.page-viewer-drawer :viewer-page="$viewerPage" />
 
         {{-- Information Architecture --}}
         <div x-init="window.addEventListener('pages:view-content', (e) => {

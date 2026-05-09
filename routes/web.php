@@ -4,6 +4,7 @@ use App\Livewire\Websites\Listing as WebsitesListing;
 use App\Livewire\Websites\Detail as WebsitesDetail;
 use App\Livewire\Pages\Listing as PagesListing;
 use App\Livewire\Pages\Expand as PagesExpand;
+use App\Livewire\ContentExtraction\Listing as ContentExtractionListing;
 use App\Livewire\Search\Listing as SearchListing;
 use Livewire\Volt\Volt;
 use Laravel\Fortify\Features;
@@ -40,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get("/websites/{website}/info", WebsitesDetail::class)->name("websites.detail");
     Route::get("/websites/{website}/pages", PagesListing::class)->name("pages.listing");
     Route::get("/websites/{website}/pages/expand", PagesExpand::class)->name("pages.expand");
+    Route::get("/websites/{website}/content-extraction", ContentExtractionListing::class)->name("content-extraction.listing");
 
     Route::get("/search", SearchListing::class)->name("search.listing");
 });

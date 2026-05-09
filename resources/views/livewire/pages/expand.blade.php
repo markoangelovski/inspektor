@@ -18,5 +18,5 @@
     <div wire:ignore id="pages-flow-root" class="flex-1 w-full" data-pages='@json($pages->values())'></div>
 
     {{-- The Reusable Drawer --}}
-    <x-inspector.page-viewer-drawer :viewer-page="$viewerPage" />
+    <x-inspektor.page-viewer-drawer :viewer-page="$viewerPage" />
 </div>
