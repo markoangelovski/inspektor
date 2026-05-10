@@ -59,7 +59,7 @@
     {{-- Nav tabs --}}
     <x-inspektor.website-detail.page-nav-tabs :website="$website" />
 
-    <div class="space-y-6 pt-6">
+    <div class="space-y-6 mt-6">
         {{-- Website metadata --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
