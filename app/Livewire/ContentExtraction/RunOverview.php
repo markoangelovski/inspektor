@@ -6,6 +6,7 @@ use App\Domain\ContentExtraction\Actions\CreateContentExtractionRunAction;
 use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 use App\Domain\ContentExtraction\Services\ExtractionEventStore;
 use App\Domain\ContentExtraction\Services\ToggleRunState;
+use App\Models\User;
 use App\Models\Website;
 use Livewire\Component;
 
@@ -60,11 +61,24 @@ class RunOverview extends Component
         }
     }
 
-    public function restart(CreateContentExtractionRunAction $action): void
+    public function restart(): void
     {
-        $run = $action->execute($this->website);
+        $run = app(CreateContentExtractionRunAction::class)->execute($this->website);
         $this->selectedRunId = $run->id;
         $this->dispatch('content-extraction.started', runId: $run->id);
+    }
+
+    public function deleteRun(): void
+    {
+        $run = ContentExtractionRun::find($this->selectedRunId);
+        if (! $run) {
+            return;
+        }
+
+        $run->delete();
+
+        $this->selectedRunId = null;
+        $this->loadLatestRunId();
     }
 
     public function render(ExtractionEventStore $eventStore)
@@ -77,7 +91,14 @@ class RunOverview extends Component
             ? ContentExtractionRun::with(['pageExtractions.page'])->find($this->selectedRunId)
             : null;
 
-        $events = $run ? array_reverse($eventStore->all($run)) : [];
+        $events = [];
+        if ($run) {
+            if ($run->status->isTerminal()) {
+                $events = $run->events ?? [];
+            } else {
+                $events = $eventStore->all($run);
+            }
+        }
 
         $progress = 0;
         if ($run && $run->total_pages > 0) {
@@ -90,8 +111,10 @@ class RunOverview extends Component
             true
         );
 
+        $creator = $run?->created_by ? User::find($run->created_by) : null;
+
         return view('livewire.content-extraction.run-overview', compact(
-            'runs', 'run', 'events', 'progress', 'isProcessing'
+            'runs', 'run', 'events', 'progress', 'isProcessing', 'creator'
         ));
     }
 }

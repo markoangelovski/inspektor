@@ -31,6 +31,7 @@ class StartContentExtractionRun implements ShouldQueue
         $tickets = $pageIds->map(fn($id) => [
             'id' => (string) str()->ulid(),
             'page_id' => $id,
+            'website_id' => $run->website_id,
             'content_extraction_run_id' => $run->id,
             'status' => 'pending',
             'created_at' => now(),

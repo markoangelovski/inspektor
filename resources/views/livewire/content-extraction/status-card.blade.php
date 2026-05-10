@@ -5,12 +5,21 @@
             Check if the website's XML sitemaps have been updated since the last scan.
         </p>
 
-        <button wire:click="testForChanges" @disabled($testStatus === 'pending')
-            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm
-                {{ $testStatus === 'pending' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }}">
-            <flux:icon.arrow-path class="size-4 {{ $testStatus === 'pending' ? 'animate-spin' : '' }}" />
-            {{ $testStatus === 'pending' ? 'Testing...' : 'Test website' }}
-        </button>
+        <div class="flex items-center gap-2">
+            <button wire:click="testForChanges" @disabled($testStatus === 'pending')
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm
+                    {{ $testStatus === 'pending' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }}">
+                <flux:icon.arrow-path class="size-4 {{ $testStatus === 'pending' ? 'animate-spin' : '' }}" />
+                {{ $testStatus === 'pending' ? 'Testing...' : 'Test website' }}
+            </button>
+
+            <button wire:click="start" @disabled($testStatus === 'pending')
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm
+                    {{ $testStatus === 'pending' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }}">
+                <flux:icon.play class="size-3.5" />
+                Start new scan
+            </button>
+        </div>
 
         @if ($testResult)
             @if ($testResult['error'] ?? null)
@@ -34,13 +43,6 @@
                         @endforeach
                     </ul>
                 </div>
-
-                {{-- Start new scan — always visible after a test --}}
-                <button wire:click="start"
-                    class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer">
-                    <flux:icon.play class="size-3.5" />
-                    Start new scan
-                </button>
 
                 {{-- Diff details — one group per detail entry that has items --}}
                 @php

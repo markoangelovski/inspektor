@@ -5,7 +5,6 @@ namespace App\Domain\ContentExtraction\Models;
 use App\Models\Website;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use App\Domain\ContentExtraction\Enums\ExtractionMode;
 use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
 
@@ -18,19 +17,21 @@ class ContentExtractionRun extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'website_id',        // ✅ allow mass assignment
-        'status',            // current run status
-        'mode',              // initial / rerun
-        'extractor_version', // e.g. readability-v1
-        'config',            // optional config JSON
+        'website_id',
+        'created_by',
+        'status',
+        'diff',
+        'events',
+        'total_pages',
+        'processed_pages',
         'started_at',
         'finished_at',
     ];
 
     protected $casts = [
         'status' => ContentExtractionRunStatus::class,
-        'mode' => ExtractionMode::class,
-        'config' => 'array',
+        'diff' => 'array',
+        'events' => 'array',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
@@ -56,12 +57,11 @@ class ContentExtractionRun extends Model
         return $this->processed_pages >= $this->total_pages;
     }
 
-    // Add a helper to check if we should continue working
     public function isInterruptible(): bool
     {
         return in_array(
             $this->status,
-            [ContentExtractionRunStatus::Paused, ContentExtractionRunStatus::Cancelling],
+            [ContentExtractionRunStatus::Paused],
             true
         );
     }

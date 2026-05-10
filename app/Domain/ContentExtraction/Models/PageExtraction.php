@@ -17,7 +17,8 @@ class PageExtraction extends Model
 
     protected $fillable = [
         'page_id',
-        'content_extraction_run_id', // Must match migration
+        'website_id',
+        'content_extraction_run_id',
         'status',
         'error',
         'failure_type',

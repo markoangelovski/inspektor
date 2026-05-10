@@ -31,6 +31,8 @@ class StatusCard extends Component
 
     public ?array $testResult = null;
 
+    public bool $pendingStart = false;
+
     public function mount(Website $website): void
     {
         $this->website = $website;
@@ -96,6 +98,11 @@ class StatusCard extends Component
             $this->testResult = $result;
             $this->testStatus = 'done';
 
+            if ($this->pendingStart) {
+                $this->pendingStart = false;
+                $this->createRun($result);
+            }
+
             return;
         }
 
@@ -108,24 +115,31 @@ class StatusCard extends Component
                 'error' => 'Test failed unexpectedly. Please try again.',
             ];
             $this->testStatus = 'done';
+
+            if ($this->pendingStart) {
+                $this->pendingStart = false;
+                $this->createRun($this->testResult);
+            }
         }
     }
 
-    public function start(CreateContentExtractionRunAction $action): void
+    public function start(): void
     {
-        $this->testResult = null;
-        $this->testStatus = 'idle';
-        $this->testDispatchedAt = null;
-        Cache::forget(TestSitemapsForChangesJob::resultKey($this->website->id));
-        Cache::forget(TestSitemapsForChangesJob::pendingKey($this->website->id));
-        Cache::forget(TestSitemapsForChangesJob::sitemapDataKey($this->website->id));
+        if ($this->testResult !== null) {
+            // Test already complete — use its result as the diff immediately.
+            $this->createRun($this->testResult);
 
-        $run = $action->execute($this->website);
+            return;
+        }
 
-        $this->runId = $run->id;
-        $this->status = $run->status;
+        // No test result yet — dispatch async test jobs and auto-start on completion.
+        $this->pendingStart = true;
+        $this->testForChanges();
+    }
 
-        $this->dispatch('content-extraction.started', runId: $run->id);
+    public function restart(): void
+    {
+        $this->start();
     }
 
     public function pause(): void
@@ -146,9 +160,21 @@ class StatusCard extends Component
         }
     }
 
-    public function restart(): void
+    private function createRun(array $diff): void
     {
-        $this->start(app(CreateContentExtractionRunAction::class));
+        $this->testResult = null;
+        $this->testStatus = 'idle';
+        $this->testDispatchedAt = null;
+        Cache::forget(TestSitemapsForChangesJob::resultKey($this->website->id));
+        Cache::forget(TestSitemapsForChangesJob::pendingKey($this->website->id));
+        Cache::forget(TestSitemapsForChangesJob::sitemapDataKey($this->website->id));
+
+        $run = app(CreateContentExtractionRunAction::class)->execute($this->website, $diff);
+
+        $this->runId = $run->id;
+        $this->status = $run->status;
+
+        $this->dispatch('content-extraction.started', runId: $run->id);
     }
 
     private function restoreTestState(): void
