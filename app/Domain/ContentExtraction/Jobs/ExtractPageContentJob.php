@@ -65,8 +65,16 @@ class ExtractPageContentJob implements ShouldQueue
         // Mark as processing immediately to avoid other workers picking it up
         $ticket->update([
             'status' => PageExtractionStatus::Processing,
-            'started_at' => now(), // Set started_at here
+            'started_at' => now(),
         ]);
+
+        // Re-check run status after claiming the ticket. The run may have been paused
+        // between the initial check above and now (common on large sites where many jobs
+        // are queued). Leave the ticket as 'processing' so ResumeContentExtractionRun
+        // can reset and re-dispatch it.
+        if ($ticket->run->fresh()->status !== ContentExtractionRunStatus::Running) {
+            return;
+        }
 
         $isTerminal = false;
 

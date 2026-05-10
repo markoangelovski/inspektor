@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use App\Domain\ContentExtraction\Services\RunFinalizer;
 
 class ResumeContentExtractionRun implements ShouldQueue
 {
@@ -16,13 +17,13 @@ class ResumeContentExtractionRun implements ShouldQueue
         public readonly string $runId
     ) {}
 
-    public function handle(): void
+    public function handle(RunFinalizer $finalizer): void
     {
         $run = ContentExtractionRun::find($this->runId);
         if (!$run || $run->status->isTerminal()) return;
 
-        // Tickets left in 'processing' when the run was paused had their jobs
-        // abandoned mid-flight. Reset them so they can be re-dispatched.
+        // Jobs that were in-flight when the run was paused left their tickets in
+        // 'processing'. Reset them so they can be re-dispatched below.
         PageExtraction::where('content_extraction_run_id', $run->id)
             ->where('status', 'processing')
             ->update(['status' => 'pending', 'updated_at' => now()]);
@@ -30,6 +31,13 @@ class ResumeContentExtractionRun implements ShouldQueue
         $pendingTickets = PageExtraction::where('content_extraction_run_id', $run->id)
             ->where('status', 'pending')
             ->get();
+
+        if ($pendingTickets->isEmpty()) {
+            // All tickets finished while the run was paused. No new jobs to dispatch,
+            // so the normal finalizer path will never be called — finalize explicitly.
+            $finalizer->checkAndFinalize($run);
+            return;
+        }
 
         foreach ($pendingTickets as $ticket) {
             $ticket->update(['status' => 'processing']);
