@@ -23,7 +23,7 @@ class PagesFetcher
                 return [];
             }
 
-            $xml = simplexml_load_string($response->body());
+            $xml = simplexml_load_string(trim($response->body()));
 
             if (! $xml) {
                 Log::warning("Invalid XML at sitemap: {$sitemapUrl}");

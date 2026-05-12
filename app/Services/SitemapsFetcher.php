@@ -69,7 +69,7 @@ class SitemapsFetcher
             $collected[$sitemapUrl] = ['url' => $sitemapUrl, 'lastmod' => $lastmod];
 
             try {
-                $xml = simplexml_load_string($response->body());
+                $xml = simplexml_load_string(trim($response->body()));
             } catch (\Throwable $e) {
                 Log::warning("Invalid XML at {$sitemapUrl}: {$e->getMessage()}");
                 return;

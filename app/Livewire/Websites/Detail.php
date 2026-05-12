@@ -20,13 +20,8 @@ class Detail extends Component
 
     public bool $fetchingSitemaps = false;
 
-    #[Validate([
-        'required',
-        'url',
-        'max:2048',
-        'regex:/\.xml$/i',
-    ])]
-    public string $sitemapUrl = '';
+    #[Validate('required|string|max:65535')]
+    public string $sitemapInput = '';
 
     public bool $fetchingPages = false;
 
@@ -90,24 +85,90 @@ class Detail extends Component
 
     public function addSitemap(AddSitemap $addSitemap): void
     {
-        // Optional (recommended later)
-        // $this->authorize('update', $this->website);
-
         $this->validate();
 
-        $addSitemap->execute(
-            website: $this->website,
-            url: $this->sitemapUrl,
-        );
+        $entries = $this->parseSitemapInput($this->sitemapInput);
 
-        // Reset input
-        $this->reset('sitemapUrl');
+        if (empty($entries)) {
+            $this->addError('sitemapInput', 'No valid sitemap URLs found.');
+            return;
+        }
 
-        // Refresh relationship / counters
+        foreach ($entries as $entry) {
+            $addSitemap->execute(
+                website: $this->website,
+                url: $entry['url'],
+                lastmod: $entry['lastmod'],
+            );
+        }
+
+        $this->reset('sitemapInput');
         $this->website->refresh();
-
-        // Close modal
         Flux::modal('add-sitemap')->close();
+    }
+
+    private function parseSitemapInput(string $input): array
+    {
+        $input = trim($input);
+
+        if (
+            str_contains($input, '<sitemap') ||
+            str_contains($input, '<urlset') ||
+            str_contains($input, '<sitemapindex')
+        ) {
+            return $this->parseXmlSitemaps($input);
+        }
+
+        $entries = [];
+        foreach (explode("\n", $input) as $line) {
+            $url = trim($line);
+            if ($url !== '' && filter_var($url, FILTER_VALIDATE_URL)) {
+                $entries[] = ['url' => $url, 'lastmod' => null];
+            }
+        }
+
+        return $entries;
+    }
+
+    private function parseXmlSitemaps(string $xml): array
+    {
+        $entries = [];
+
+        try {
+            $prev = libxml_use_internal_errors(true);
+            $doc = simplexml_load_string($xml);
+            libxml_use_internal_errors($prev);
+
+            if (!$doc) {
+                return [];
+            }
+
+            $ns = $doc->getNamespaces(true);
+            $defaultNs = $ns[''] ?? null;
+
+            if ($defaultNs) {
+                $doc->registerXPathNamespace('sm', $defaultNs);
+                $locs = $doc->xpath('//sm:loc');
+                $lastmods = $doc->xpath('//sm:lastmod');
+            } else {
+                $locs = $doc->xpath('//loc');
+                $lastmods = $doc->xpath('//lastmod');
+            }
+
+            foreach ($locs as $i => $loc) {
+                $url = trim((string) $loc);
+                if (filter_var($url, FILTER_VALIDATE_URL)) {
+                    $entries[] = [
+                        'url' => $url,
+                        'lastmod' => isset($lastmods[$i]) ? trim((string) $lastmods[$i]) : null,
+                    ];
+                }
+            }
+        } catch (\Exception) {
+            // Return empty on parse failure
+        }
+
+        return $entries;
     }
 
     public function fetchPages(FetchPages $fetchPages): void

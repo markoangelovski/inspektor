@@ -7,18 +7,15 @@ use App\Models\Website;
 
 class AddSitemap
 {
-    public function execute(Website $website, string $url): Sitemap
+    public function execute(Website $website, string $url, ?string $lastmod = null): Sitemap
     {
-        // Normalize URL
         $url = trim($url);
 
-        // Create or ignore duplicate (unique index protects us)
-        $sitemap = Sitemap::firstOrCreate([
-            'website_id' => $website->id,
-            'url' => $url,
-        ]);
+        $sitemap = Sitemap::firstOrCreate(
+            ['website_id' => $website->id, 'url' => $url],
+            $lastmod ? ['lastmod' => $lastmod] : [],
+        );
 
-        // Keep website metadata consistent
         $website->update([
             'sitemaps_fetched' => true,
             'sitemaps_count' => $website->sitemaps()->count(),

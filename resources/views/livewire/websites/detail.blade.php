@@ -170,13 +170,18 @@
                     @endif
                 @endif
 
-                <flux:modal name="add-sitemap" class="md:w-96">
+                <flux:modal name="add-sitemap" class="md:w-[32rem]">
                     <div class="space-y-6">
                         <div>
-                            <flux:heading size="lg">Add new sitemap</flux:heading>
+                            <flux:heading size="lg">Add sitemaps</flux:heading>
                         </div>
-                        <flux:input wire:model.defer="sitemapUrl" label="Sitemap"
-                            placeholder="https://example.com/sitemap.xml" />
+                        <div class="space-y-2">
+                            <flux:textarea wire:model.defer="sitemapInput" label="Sitemaps" rows="8"
+                                placeholder="https://example.com/sitemap.xml&#10;https://example.com/sitemap2.xml&#10;&#10;Or paste XML sitemap index content..." />
+                            <flux:text class="text-xs text-gray-500 dark:text-zinc-400">
+                                Enter one URL per line, or paste the full contents of an XML sitemap index — URLs and last-modified dates will be extracted automatically.
+                            </flux:text>
+                        </div>
                         <div class="flex">
                             <flux:spacer />
                             <flux:button wire:click="addSitemap" wire:loading.attr="disabled" type="submit"
