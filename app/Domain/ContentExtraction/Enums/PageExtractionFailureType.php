@@ -25,7 +25,7 @@ enum PageExtractionFailureType: string
      */
     public static function fromStatusCode(?int $code): self
     {
-        if (!$code) {
+        if (! $code) {
             return self::Unknown;
         }
 

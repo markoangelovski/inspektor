@@ -4,6 +4,7 @@
     $activeTab = match (true) {
         request()->routeIs('pages.listing', 'pages.expand') => 'pages',
         request()->routeIs('content-extraction.listing') => 'content-extraction',
+        request()->routeIs('ai-credits.listing') => 'ai-credits',
         default => 'info',
     };
 
@@ -32,6 +33,14 @@
         role="tab" aria-selected="{{ $activeTab === 'content-extraction' ? 'true' : 'false' }}">
         <flux:icon.document-magnifying-glass class="shrink-0 size-5" />
         Content extraction
+    </a>
+
+
+    <a href="{{ route('ai-credits.listing', $website) }}" wire:navigate
+        class="flex whitespace-nowrap gap-2 items-center px-2 -mb-px border-b-[2px] text-sm font-medium transition-colors cursor-pointer {{ $activeTab === 'ai-credits' ? $active : $inactive }}"
+        role="tab" aria-selected="{{ $activeTab === 'ai-credits' ? 'true' : 'false' }}">
+        <flux:icon.calculator class="shrink-0 size-5" />
+        AI Credits
     </a>
 
 </div>

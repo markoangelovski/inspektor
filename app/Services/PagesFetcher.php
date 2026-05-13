@@ -20,6 +20,7 @@ class PagesFetcher
 
             if (! $response->ok()) {
                 Log::warning("Failed to fetch sitemap: {$sitemapUrl}");
+
                 return [];
             }
 
@@ -27,6 +28,7 @@ class PagesFetcher
 
             if (! $xml) {
                 Log::warning("Invalid XML at sitemap: {$sitemapUrl}");
+
                 return [];
             }
 

@@ -2,17 +2,17 @@
 
 namespace App\Domain\ContentExtraction\Models;
 
-use App\Models\Page;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use App\Domain\ContentExtraction\Enums\PageExtractionStatus;
-use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use App\Models\Page;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
 
 class PageExtraction extends Model
 {
     use HasUlids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [

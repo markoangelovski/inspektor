@@ -2,18 +2,19 @@
 
 namespace App\Domain\ContentExtraction\Models;
 
-use App\Models\Website;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
+use App\Models\Website;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
 
 class ContentExtractionRun extends Model
 {
     use HasUlids;
 
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -54,6 +55,7 @@ class ContentExtractionRun extends Model
     public function isAllProcessed(): bool
     {
         $this->refresh();
+
         return $this->processed_pages >= $this->total_pages;
     }
 

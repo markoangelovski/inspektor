@@ -26,7 +26,6 @@ return new class extends Migration
 
             $table->timestampsTz();
 
-
             $table->ulid('content_extraction_run_id')->index();
             $table
                 ->foreign('content_extraction_run_id')

@@ -2,20 +2,21 @@
 
 namespace App\Livewire\Websites;
 
-use Flux\Flux;
-use App\Models\Website;
-use Livewire\Component;
-use Livewire\WithPagination;
-use Livewire\Attributes\On;
 use App\Actions\Pages\FetchPages;
-use Livewire\Attributes\Validate;
 use App\Actions\Sitemaps\AddSitemap;
 use App\Actions\Sitemaps\FetchSitemaps;
 use App\Actions\Websites\DeleteWebsite;
+use App\Models\Website;
+use Flux\Flux;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class Detail extends Component
 {
     use WithPagination;
+
     public Website $website;
 
     public bool $fetchingSitemaps = false;
@@ -30,20 +31,20 @@ class Detail extends Component
         $this->website = $website;
         $this->fetchingSitemaps = $website->sitemaps_processing;
         $this->fetchingPages = $website->pages_processing
-            || ($website->sitemaps_fetched && !$website->pages_fetched);
+            || ($website->sitemaps_fetched && ! $website->pages_fetched);
     }
 
     public function refreshData(): void
     {
         $this->website->refresh();
 
-        if (!$this->website->sitemaps_processing) {
+        if (! $this->website->sitemaps_processing) {
             $this->fetchingSitemaps = false;
         }
 
         // Hold fetchingPages true through the gap between sitemaps completing
         // and the pages job starting (they are auto-queued in sequence).
-        if ($this->website->sitemaps_fetched && !$this->website->pages_fetched) {
+        if ($this->website->sitemaps_fetched && ! $this->website->pages_fetched) {
             $this->fetchingPages = true;
         } elseif ($this->website->pages_fetched) {
             $this->fetchingPages = false;
@@ -74,7 +75,9 @@ class Detail extends Component
         // $this->authorize('update', $this->website);
 
         // Guard against double clicks
-        if ($this->fetchingSitemaps) return;
+        if ($this->fetchingSitemaps) {
+            return;
+        }
 
         // 2. Execute domain action
         $fetchSitemaps->execute($this->website);
@@ -91,6 +94,7 @@ class Detail extends Component
 
         if (empty($entries)) {
             $this->addError('sitemapInput', 'No valid sitemap URLs found.');
+
             return;
         }
 
@@ -139,7 +143,7 @@ class Detail extends Component
             $doc = simplexml_load_string($xml);
             libxml_use_internal_errors($prev);
 
-            if (!$doc) {
+            if (! $doc) {
                 return [];
             }
 

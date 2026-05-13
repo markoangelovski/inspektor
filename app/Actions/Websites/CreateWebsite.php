@@ -9,16 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class CreateWebsite
 {
-    public function __construct(private FetchSitemaps $fetchSitemaps)
-    {
-    }
+    public function __construct(private FetchSitemaps $fetchSitemaps) {}
 
     public function execute($websiteData): Website
     {
         $website = Website::create([
             'user_id' => Auth::id(),
-            "name" => strip_tags($websiteData["name"]),
-            "url" => rtrim(strip_tags($websiteData["url"]), "/"),
+            'name' => strip_tags($websiteData['name']),
+            'url' => rtrim(strip_tags($websiteData['url']), '/'),
         ]);
 
         ProcessWebsiteMetadata::dispatch($website->id);

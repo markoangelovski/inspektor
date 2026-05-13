@@ -23,7 +23,7 @@ class PageFetcher
 
         if ($response->status() === 404) {
             // Throwing a specific message helps the Job catch block categorize it
-            throw new \Exception("HTTP request returned status code 404", 404);
+            throw new \Exception('HTTP request returned status code 404', 404);
         }
 
         if ($response->failed()) {

@@ -2,9 +2,9 @@
 
 namespace App\Domain\ContentExtraction\Actions;
 
-use App\Models\Website;
-use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 use App\Domain\ContentExtraction\Jobs\StartContentExtractionRun;
+use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use App\Models\Website;
 
 class CreateContentExtractionRunAction
 {

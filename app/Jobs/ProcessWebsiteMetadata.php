@@ -35,10 +35,10 @@ class ProcessWebsiteMetadata implements ShouldQueue
             $metadata = $fetcher->fetch($website->url);
 
             $website->update([
-                'meta_title'          => $metadata['title'] ?? null,
-                'meta_description'    => $metadata['description'] ?? null,
-                'meta_image_url'          => $metadata['image'] ?? null,
-                'metadata_processed'  => true,
+                'meta_title' => $metadata['title'] ?? null,
+                'meta_description' => $metadata['description'] ?? null,
+                'meta_image_url' => $metadata['image'] ?? null,
+                'metadata_processed' => true,
             ]);
         } catch (Throwable $e) {
             report($e);

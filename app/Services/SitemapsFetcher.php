@@ -13,7 +13,7 @@ class SitemapsFetcher
         $baseUrl = rtrim($url, '/');
 
         // 1. Fetch robots.txt
-        $robotsUrl = $baseUrl . '/robots.txt';
+        $robotsUrl = $baseUrl.'/robots.txt';
         $robotsResponse = Http::timeout(10)->get($robotsUrl);
 
         if (! $robotsResponse->ok()) {
@@ -24,7 +24,7 @@ class SitemapsFetcher
         $sitemapUrls = $this->extractSitemapsFromRobots($robotsResponse->body());
 
         if (empty($sitemapUrls)) {
-            $sitemapUrls = [$baseUrl . '/sitemap.xml'];
+            $sitemapUrls = [$baseUrl.'/sitemap.xml'];
         }
 
         // 3. Recursively fetch all sitemaps (keyed by URL for deduplication)
@@ -42,11 +42,11 @@ class SitemapsFetcher
         $lines = preg_split('/\r\n|\r|\n/', $robotsTxt);
 
         return collect($lines)
-            ->filter(fn($line) => Str::startsWith(
+            ->filter(fn ($line) => Str::startsWith(
                 Str::lower(trim($line)),
                 'sitemap:'
             ))
-            ->map(fn($line) => trim(substr($line, 8)))
+            ->map(fn ($line) => trim(substr($line, 8)))
             ->filter()
             ->values()
             ->toArray();
@@ -63,6 +63,7 @@ class SitemapsFetcher
 
             if (! $response->ok()) {
                 Log::warning("Sitemap fetch failed: {$sitemapUrl} (HTTP {$response->status()})");
+
                 return;
             }
 
@@ -72,11 +73,13 @@ class SitemapsFetcher
                 $xml = simplexml_load_string(trim($response->body()));
             } catch (\Throwable $e) {
                 Log::warning("Invalid XML at {$sitemapUrl}: {$e->getMessage()}");
+
                 return;
             }
 
             if (! $xml) {
                 Log::warning("Failed to parse XML at {$sitemapUrl}");
+
                 return;
             }
 

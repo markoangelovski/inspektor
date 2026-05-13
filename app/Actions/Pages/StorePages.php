@@ -28,7 +28,7 @@ class StorePages
 
             // Normalize path & slug
             $path = parse_url($url, PHP_URL_PATH) ?: '/';
-            $path = '/' . ltrim($path, '/'); // ensure leading slash
+            $path = '/'.ltrim($path, '/'); // ensure leading slash
             $slug = basename($path);
 
             // Determine parent_path
@@ -40,7 +40,7 @@ class StorePages
                 $trimmedPath = rtrim($path, '/');
 
                 // Get parent directory
-                $parentPath = '/' . ltrim(dirname($trimmedPath), '/');
+                $parentPath = '/'.ltrim(dirname($trimmedPath), '/');
 
                 // Keep trailing slash if original path had it (except for root '/')
                 if ($parentPath !== '/' && $hasTrailingSlash) {

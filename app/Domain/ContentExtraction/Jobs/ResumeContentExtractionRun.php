@@ -2,12 +2,12 @@
 
 namespace App\Domain\ContentExtraction\Jobs;
 
+use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use App\Domain\ContentExtraction\Models\PageExtraction;
+use App\Domain\ContentExtraction\Services\RunFinalizer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use App\Domain\ContentExtraction\Models\PageExtraction;
-use App\Domain\ContentExtraction\Models\ContentExtractionRun;
-use App\Domain\ContentExtraction\Services\RunFinalizer;
 
 class ResumeContentExtractionRun implements ShouldQueue
 {
@@ -20,7 +20,9 @@ class ResumeContentExtractionRun implements ShouldQueue
     public function handle(RunFinalizer $finalizer): void
     {
         $run = ContentExtractionRun::find($this->runId);
-        if (!$run || $run->status->isTerminal()) return;
+        if (! $run || $run->status->isTerminal()) {
+            return;
+        }
 
         // Jobs that were in-flight when the run was paused left their tickets in
         // 'processing'. Reset them so they can be re-dispatched below.
@@ -36,6 +38,7 @@ class ResumeContentExtractionRun implements ShouldQueue
             // All tickets finished while the run was paused. No new jobs to dispatch,
             // so the normal finalizer path will never be called — finalize explicitly.
             $finalizer->checkAndFinalize($run);
+
             return;
         }
 

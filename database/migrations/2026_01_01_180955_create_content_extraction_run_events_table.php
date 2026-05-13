@@ -19,7 +19,6 @@ return new class extends Migration
         Schema::create('content_extraction_run_events', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
-
             $table->string('type', 64);
             $table->jsonb('payload');
 

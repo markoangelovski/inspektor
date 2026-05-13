@@ -2,8 +2,8 @@
 
 namespace App\Actions\Pages;
 
-use App\Models\Website;
 use App\Jobs\ProcessPages;
+use App\Models\Website;
 
 class FetchPages
 {

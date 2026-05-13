@@ -3,10 +3,9 @@
 namespace App\Livewire\Websites;
 
 use App\Models\Website;
-use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\WithoutUrlPagination;
 
 class Listing extends Component
 {
@@ -21,7 +20,8 @@ class Listing extends Component
 
     public function render()
     {
-        $websites = Website::query()->orderBy("id", "DESC")->paginate(50);
-        return view('livewire.websites.listing', compact("websites"));
+        $websites = Website::query()->orderBy('id', 'DESC')->paginate(50);
+
+        return view('livewire.websites.listing', compact('websites'));
     }
 }

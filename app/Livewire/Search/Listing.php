@@ -72,14 +72,14 @@ class Listing extends Component
         $canonicalPath = $canonical ? (parse_url($canonical, PHP_URL_PATH) ?? $canonical) : null;
 
         return [
-            'title'        => $this->sanitize($title ? strip_tags($title, '<em>') : null),
-            'description'  => $this->sanitize($description ? strip_tags($description, '<em>') : null),
-            'canonical'    => $this->sanitize($canonical),
+            'title' => $this->sanitize($title ? strip_tags($title, '<em>') : null),
+            'description' => $this->sanitize($description ? strip_tags($description, '<em>') : null),
+            'canonical' => $this->sanitize($canonical),
             'canonicalPath' => $this->sanitize($canonicalPath),
-            'bodySnippet'  => $this->sanitize(
+            'bodySnippet' => $this->sanitize(
                 $bodyText && str_contains($bodyText, '<em>') ? $this->excerptAround($bodyText) : null
             ),
-            'websiteId'    => $result->page?->website_id,
+            'websiteId' => $result->page?->website_id,
         ];
     }
 
@@ -91,7 +91,7 @@ class Listing extends Component
         $start = $emPos !== false ? max(0, $emPos - 100) : 0;
         $excerpt = mb_substr($text, $start, $window + 100);
 
-        return ($start > 0 ? '…' : '') . strip_tags($excerpt, '<em>');
+        return ($start > 0 ? '…' : '').strip_tags($excerpt, '<em>');
     }
 
     private function sanitize(?string $value): ?string
@@ -99,6 +99,7 @@ class Listing extends Component
         if ($value === null) {
             return null;
         }
+
         // Replace any invalid UTF-8 byte sequences so JSON encoding never fails.
         return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
     }

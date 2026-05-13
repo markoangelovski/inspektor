@@ -2,19 +2,19 @@
 
 namespace App\Domain\ContentExtraction\Jobs;
 
+use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
+use App\Domain\ContentExtraction\Enums\PageExtractionFailureType;
+use App\Domain\ContentExtraction\Enums\PageExtractionStatus;
+use App\Domain\ContentExtraction\Models\PageExtraction;
+use App\Domain\ContentExtraction\Services\ExtractionEventStore;
+use App\Domain\ContentExtraction\Services\PageContentWriter;
+use App\Domain\ContentExtraction\Services\PageFetcher;
+use App\Domain\ContentExtraction\Services\RunFinalizer;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use App\Domain\ContentExtraction\Services\PageFetcher;
-use App\Domain\ContentExtraction\Models\PageExtraction;
-use App\Domain\ContentExtraction\Services\RunFinalizer;
-use App\Domain\ContentExtraction\Enums\PageExtractionStatus;
-use App\Domain\ContentExtraction\Services\PageContentWriter;
-use App\Domain\ContentExtraction\Services\ExtractionEventStore;
-use App\Domain\ContentExtraction\Enums\PageExtractionFailureType;
-use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 class ExtractPageContentJob implements ShouldQueue
 {
@@ -41,7 +41,6 @@ class ExtractPageContentJob implements ShouldQueue
         $this->websiteId = PageExtraction::find($pageExtractionId)?->run?->website_id;
     }
 
-
     /**
      * Execute the job.
      */
@@ -55,7 +54,7 @@ class ExtractPageContentJob implements ShouldQueue
 
         // 1. Validation: Stop if ticket doesn't exist, is done, or run is not active
         if (
-            !$ticket ||
+            ! $ticket ||
             $ticket->status === PageExtractionStatus::Done ||
             $ticket->run->status !== ContentExtractionRunStatus::Running
         ) {
@@ -84,7 +83,7 @@ class ExtractPageContentJob implements ShouldQueue
             $html = $fetcher->fetch($ticket->page);
 
             // 3. Parse Content
-            $dom = new \DOMDocument();
+            $dom = new \DOMDocument;
             @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
             $xpath = new \DOMXPath($dom);
 
@@ -105,7 +104,7 @@ class ExtractPageContentJob implements ShouldQueue
 
             $events->append($ticket->run, [
                 'type' => 'page.done',
-                'message' => "Extracted: {$ticket->page->url}"
+                'message' => "Extracted: {$ticket->page->url}",
             ]);
 
             // Increment and Finalize only once on success
@@ -129,7 +128,7 @@ class ExtractPageContentJob implements ShouldQueue
 
                 $events->append($ticket->run, [
                     'type' => 'page.failed',
-                    'message' => "Final failure ({$failureType->value}): {$ticket->page->url}"
+                    'message' => "Final failure ({$failureType->value}): {$ticket->page->url}",
                 ]);
 
                 // Increment and Finalize only once on permanent failure
@@ -138,12 +137,13 @@ class ExtractPageContentJob implements ShouldQueue
 
                 // Stop retrying
                 $this->fail($e);
+
                 return;
             }
 
             // 5. RETRY PATH
-            // If we get here, it's a retryable error (like a 500 or timeout) 
-            // and we still have attempts left. 
+            // If we get here, it's a retryable error (like a 500 or timeout)
+            // and we still have attempts left.
             // We do NOT increment processed_pages yet.
             throw $e;
         }
@@ -166,15 +166,15 @@ class ExtractPageContentJob implements ShouldQueue
         foreach ($xpath->query('//head/link[@href]') as $link) {
             /** @var \DOMElement $link */
             $rel = $link->getAttribute('rel');
-            if (!in_array($rel, $relevantRels)) {
+            if (! in_array($rel, $relevantRels)) {
                 continue;
             }
             $entry = array_filter([
-                'rel'      => $rel,
-                'href'     => $link->getAttribute('href'),
+                'rel' => $rel,
+                'href' => $link->getAttribute('href'),
                 'hreflang' => $link->getAttribute('hreflang') ?: null,
-                'type'     => $link->getAttribute('type') ?: null,
-                'title'    => $link->getAttribute('title') ?: null,
+                'type' => $link->getAttribute('type') ?: null,
+                'title' => $link->getAttribute('title') ?: null,
             ]);
             if ($entry) {
                 $links[] = $entry;
@@ -213,7 +213,7 @@ class ExtractPageContentJob implements ShouldQueue
 
     private function parseElement(\DOMNode $node): mixed
     {
-        if (!($node instanceof \DOMElement)) {
+        if (! ($node instanceof \DOMElement)) {
             return null;
         }
 
@@ -224,6 +224,7 @@ class ExtractPageContentJob implements ShouldQueue
                 'src' => $node->getAttribute('src'),
                 'title' => $node->getAttribute('title'),
             ]);
+
             return $result ?: null;
         }
 
@@ -233,12 +234,13 @@ class ExtractPageContentJob implements ShouldQueue
                     return $this->parseElement($child);
                 }
             }
+
             return null;
         }
 
         if ($tagName === 'img') {
             $src = $node->getAttribute('src') ?: $node->getAttribute('data-src');
-            if (!$src) {
+            if (! $src) {
                 return null;
             }
             $result = ['src' => $src];
@@ -247,6 +249,7 @@ class ExtractPageContentJob implements ShouldQueue
                     $result[$attr] = $value;
                 }
             }
+
             return $result;
         }
 
@@ -263,6 +266,7 @@ class ExtractPageContentJob implements ShouldQueue
             if ($text = trim($node->textContent)) {
                 $result['text'] = $text;
             }
+
             return $result ?: null;
         }
 
@@ -289,6 +293,7 @@ class ExtractPageContentJob implements ShouldQueue
                             $childResults[] = ['ld+json', $parsed];
                         }
                     }
+
                     continue;
                 }
 
@@ -302,6 +307,7 @@ class ExtractPageContentJob implements ShouldQueue
         // Leaf node — return its text content
         if (empty($childResults)) {
             $text = implode(' ', $textParts);
+
             return $text !== '' ? $text : null;
         }
 

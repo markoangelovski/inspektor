@@ -2,8 +2,8 @@
 
 namespace App\Actions\Sitemaps;
 
-use App\Models\Website;
 use App\Jobs\ProcessSitemaps;
+use App\Models\Website;
 
 class FetchSitemaps
 {

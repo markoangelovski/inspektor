@@ -4,8 +4,6 @@ namespace App\Actions\Websites;
 
 use App\Models\Website;
 
-use function Pest\Laravel\delete;
-
 class DeleteWebsite
 {
     /**

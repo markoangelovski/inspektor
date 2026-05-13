@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Limit to 2 requests per second per website
         // RateLimiter::for('external-crawler', function (object $job) {
-        //     // We rate limit based on the website ID so we can crawl 
+        //     // We rate limit based on the website ID so we can crawl
         //     // different websites simultaneously, but not one site too fast.
         //     return Limit::perSecond(2)->by($job->websiteId ?? 'default');
         // });

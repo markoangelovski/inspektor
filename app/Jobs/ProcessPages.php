@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
-use Throwable;
-use App\Models\Website;
-use Illuminate\Bus\Queueable;
-use App\Services\PagesFetcher;
 use App\Actions\Pages\StorePages;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use App\Models\Website;
+use App\Services\PagesFetcher;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
 
 class ProcessPages implements ShouldQueue
 {

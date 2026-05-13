@@ -2,8 +2,8 @@
 
 namespace App\Domain\ContentExtraction\Services;
 
-use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 use App\Domain\ContentExtraction\Jobs\ResumeContentExtractionRun;
+use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 
 class ToggleRunState
 {

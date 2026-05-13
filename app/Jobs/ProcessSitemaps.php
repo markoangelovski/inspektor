@@ -2,18 +2,16 @@
 
 namespace App\Jobs;
 
-use Throwable;
 use App\Models\Sitemap;
 use App\Models\Website;
-use Illuminate\Support\Str;
 use App\Services\SitemapsFetcher;
-use App\Jobs\ProcessPages;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
-
-use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
+use Throwable;
 
 class ProcessSitemaps implements ShouldQueue
 {
@@ -52,12 +50,13 @@ class ProcessSitemaps implements ShouldQueue
                 'sitemaps_processing' => false,
                 'sitemaps_message' => 'no sitemaps',
             ]);
+
             return;
         }
 
         $now = now();
 
-        $rows = collect($sitemaps)->map(fn(array $sitemap) => [
+        $rows = collect($sitemaps)->map(fn (array $sitemap) => [
             'id' => strtolower(Str::ulid()),
             'website_id' => $website->id,
             'url' => $sitemap['url'],

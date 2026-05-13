@@ -14,6 +14,7 @@ class PageContent extends Model
     use Searchable;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -38,10 +39,10 @@ class PageContent extends Model
         $head = $this->content['head'] ?? [];
 
         return [
-            'title'       => $head['title'] ?? $head['meta']['og:title'] ?? '',
+            'title' => $head['title'] ?? $head['meta']['og:title'] ?? '',
             'description' => $head['meta']['description'] ?? $head['meta']['og:description'] ?? '',
-            'canonical'   => $head['canonical'] ?? $head['meta']['og:url'] ?? '',
-            'body_text'   => $this->flattenBodyText($this->content['body'] ?? []),
+            'canonical' => $head['canonical'] ?? $head['meta']['og:url'] ?? '',
+            'body_text' => $this->flattenBodyText($this->content['body'] ?? []),
         ];
     }
 
@@ -60,6 +61,7 @@ class PageContent extends Model
             if (($trimmed = trim($node)) !== '') {
                 $texts[] = $trimmed;
             }
+
             return;
         }
 

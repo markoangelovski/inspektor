@@ -2,14 +2,13 @@
 
 namespace App\Domain\ContentExtraction\Jobs;
 
+use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
+use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Models\Page;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use App\Domain\ContentExtraction\Models\PageExtraction;
-use App\Domain\ContentExtraction\Enums\PageExtractionStatus;
-use App\Domain\ContentExtraction\Models\ContentExtractionRun;
-use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
 
 class StartContentExtractionRun implements ShouldQueue
 {
@@ -22,13 +21,15 @@ class StartContentExtractionRun implements ShouldQueue
     public function handle(): void
     {
         $run = ContentExtractionRun::find($this->runId);
-        if (!$run || $run->status->isTerminal()) return;
+        if (! $run || $run->status->isTerminal()) {
+            return;
+        }
 
         // 1. Bulk Insert Tickets (Faster & avoids row-by-row overhead on Neon)
         // We use 'on conflict do nothing' via insertOrIgnore to prevent duplicates
         $pageIds = Page::where('website_id', $run->website_id)->pluck('id');
 
-        $tickets = $pageIds->map(fn($id) => [
+        $tickets = $pageIds->map(fn ($id) => [
             'id' => (string) str()->ulid(),
             'page_id' => $id,
             'website_id' => $run->website_id,

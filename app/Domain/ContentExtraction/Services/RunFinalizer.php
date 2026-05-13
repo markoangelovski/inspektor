@@ -2,9 +2,9 @@
 
 namespace App\Domain\ContentExtraction\Services;
 
+use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
 use App\Domain\ContentExtraction\Enums\PageExtractionStatus;
 use App\Domain\ContentExtraction\Models\ContentExtractionRun;
-use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
 
 class RunFinalizer
 {
@@ -43,10 +43,10 @@ class RunFinalizer
         $affected = ContentExtractionRun::where('id', $run->id)
             ->where('status', ContentExtractionRunStatus::Running)
             ->update([
-                'status'          => $finalStatus,
-                'finished_at'     => now(),
+                'status' => $finalStatus,
+                'finished_at' => now(),
                 'processed_pages' => $run->pageExtractions()->count(),
-                'events'          => json_encode($events ?: []),
+                'events' => json_encode($events ?: []),
             ]);
 
         // if ($affected > 0) {

@@ -14,6 +14,7 @@ class Listing extends Component
     public Website $website;
 
     public string $search = '';
+
     public ?string $selectedPageId = null;
 
     /** REQUIRED for pagination hydration */
@@ -25,12 +26,13 @@ class Listing extends Component
     public array $perPageOptions = [10, 50, 100, 1000, 'all'];
 
     public ?Page $viewerPage = null;
+
     public bool $viewerOpen = false;
 
     protected $queryString = [
         'search' => ['except' => ''],
         'perPage' => ['except' => 10],
-        'page'    => ['except' => 1],
+        'page' => ['except' => 1],
     ];
 
     protected function getPages()
@@ -39,8 +41,7 @@ class Listing extends Component
             ->pages()
             ->when(
                 $this->search !== '',
-                fn($query) =>
-                $query->where('path', 'like', '%' . $this->search . '%')
+                fn ($query) => $query->where('path', 'like', '%'.$this->search.'%')
             )
             ->orderBy('path')
             ->paginate($this->resolvePerPage());
@@ -60,8 +61,9 @@ class Listing extends Component
 
     public function updatingPerPage($value): void
     {
-        if (!in_array($value, $this->perPageOptions, true)) {
+        if (! in_array($value, $this->perPageOptions, true)) {
             $this->perPage = 10;
+
             return;
         }
 
@@ -130,12 +132,12 @@ class Listing extends Component
             ->pages()
             ->when(
                 $this->search !== '',
-                fn($query) => $query->where('path', 'like', '%' . $this->search . '%')
+                fn ($query) => $query->where('path', 'like', '%'.$this->search.'%')
             )
             ->orderBy('path')
             ->get();
 
-        $filename = str($this->website->name)->slug() . '-' . now()->format('Ymdhms') . '.csv';
+        $filename = str($this->website->name)->slug().'-'.now()->format('Ymdhms').'.csv';
 
         return response()->streamDownload(function () use ($pages) {
             $handle = fopen('php://output', 'w');
@@ -165,13 +167,13 @@ class Listing extends Component
             ->pages()
             ->when(
                 $this->search !== '',
-                fn($query) => $query->where('path', 'like', '%' . $this->search . '%')
+                fn ($query) => $query->where('path', 'like', '%'.$this->search.'%')
             )
             ->orderBy('path')
             ->paginate($this->resolvePerPage());
 
         return view('livewire.pages.listing', [
-            'pages'      => $pages,
+            'pages' => $pages,
             'totalCount' => $pages->total(),
         ]);
     }

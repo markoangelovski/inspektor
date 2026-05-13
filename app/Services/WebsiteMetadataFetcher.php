@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class WebsiteMetadataFetcher
 {
@@ -23,7 +23,7 @@ class WebsiteMetadataFetcher
 
         libxml_use_internal_errors(true);
 
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         $dom->loadHTML($response->body());
 
         $xpath = new DOMXPath($dom);
@@ -70,6 +70,6 @@ class WebsiteMetadataFetcher
             return $image;
         }
 
-        return rtrim($baseUrl, '/') . '/' . ltrim($image, '/');
+        return rtrim($baseUrl, '/').'/'.ltrim($image, '/');
     }
 }

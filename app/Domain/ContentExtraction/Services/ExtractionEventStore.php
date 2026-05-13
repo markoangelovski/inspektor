@@ -2,8 +2,8 @@
 
 namespace App\Domain\ContentExtraction\Services;
 
-use Illuminate\Support\Facades\Redis;
 use App\Domain\ContentExtraction\Models\ContentExtractionRun;
+use Illuminate\Support\Facades\Redis;
 
 class ExtractionEventStore
 {
@@ -14,8 +14,8 @@ class ExtractionEventStore
         $key = $this->key($run->id);
 
         Redis::rpush($key, json_encode([
-            'id'        => (string) str()->ulid(),
-            'run_id'    => $run->id,
+            'id' => (string) str()->ulid(),
+            'run_id' => $run->id,
             'website_id' => $run->website_id,
             'timestamp' => now()->toISOString(),
             ...$event,
@@ -29,7 +29,7 @@ class ExtractionEventStore
         $key = $this->key($run->id);
 
         return array_map(
-            fn($e) => json_decode($e, true),
+            fn ($e) => json_decode($e, true),
             Redis::lrange($key, 0, -1)
         );
     }
@@ -38,6 +38,7 @@ class ExtractionEventStore
     {
         $events = $this->all($run);
         Redis::del($this->key($run->id));
+
         return $events;
     }
 

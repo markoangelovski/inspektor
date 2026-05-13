@@ -2,8 +2,8 @@
 
 namespace App\Domain\ContentExtraction\Services;
 
-use App\Models\Page;
 use App\Domain\ContentExtraction\Models\PageContent;
+use App\Models\Page;
 
 class PageContentWriter
 {
