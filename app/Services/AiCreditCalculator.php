@@ -137,13 +137,12 @@ class AiCreditCalculator
         $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
         $wc = count($words);
 
-        // Segment credits use the marginal rate only — no fixed overhead per segment.
         return [
             'type' => $type,
             'text' => $text,
             'word_count' => $wc,
-            'credits_one' => round($wc * self::RATE_ONE, 4),
-            'credits_five' => round($wc * self::RATE_FIVE, 4),
+            'credits_one' => round(self::FIXED_ONE + self::RATE_ONE * $wc, 4),
+            'credits_five' => round(self::FIXED_FIVE + self::RATE_FIVE * $wc, 4),
         ];
     }
 

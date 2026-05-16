@@ -29,8 +29,8 @@ class CalculateWebsiteAiCreditsAction
                         'url' => $page->url,
                         'translatable_content' => $segments,
                         'word_count' => $wordCount,
-                        'credits_one_language' => $this->calculator->creditsOneLanguage($wordCount),
-                        'credits_five_languages' => $this->calculator->creditsFiveLanguages($wordCount),
+                        'credits_one_language' => round(array_sum(array_column($segments, 'credits_one')), 4),
+                        'credits_five_languages' => round(array_sum(array_column($segments, 'credits_five')), 4),
                         'calculated_at' => $now,
                     ]
                 );

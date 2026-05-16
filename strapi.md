@@ -94,12 +94,14 @@ Solve the system A₅ + B₅ × words = credits using two known points:
 | 1 language  | 0.0711 + 0.002098 × words            |
 | 5 languages | 0.1265 + 0.003725 × words            |
 
-Per-segment estimates use only the variable rate (the fixed overhead is a per-page cost, not per-segment):
+The same formula is applied per segment (each translatable field is an independent translation unit):
 
-| Target      | Marginal rate per segment |
-| ----------- | ------------------------- |
-| 1 language  | 0.002098 × words          |
-| 5 languages | 0.003725 × words          |
+| Target      | Per-segment formula               |
+| ----------- | --------------------------------- |
+| 1 language  | 0.0711 + 0.002098 × words         |
+| 5 languages | 0.1265 + 0.003725 × words         |
+
+The per-page total is the sum of all per-segment costs.
 
 ---
 

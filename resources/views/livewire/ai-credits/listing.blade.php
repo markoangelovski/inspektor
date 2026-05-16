@@ -191,8 +191,8 @@
                                                 @foreach ($row->translatable_content as $segment)
                                                     @php
                                                         $segWc = $segment['word_count'] ?? null;
-                                                        $segC1 = $segment['credits_one'] ?? ($segWc !== null ? round($segWc * 0.002098, 4) : null);
-                                                        $segC5 = $segment['credits_five'] ?? ($segWc !== null ? round($segWc * 0.003725, 4) : null);
+                                                        $segC1 = $segment['credits_one'] ?? ($segWc !== null ? round(0.0711 + $segWc * 0.002098, 4) : null);
+                                                        $segC5 = $segment['credits_five'] ?? ($segWc !== null ? round(0.1265 + $segWc * 0.003725, 4) : null);
                                                     @endphp
                                                     <tr class="border-b border-gray-100 dark:border-zinc-800/40 last:border-0">
                                                         <td class="px-4 py-2 text-gray-700 dark:text-zinc-300">
