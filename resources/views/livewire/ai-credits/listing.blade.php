@@ -13,6 +13,11 @@
             $overage1  = round($billable1 / 100 * 1.5, 2);
             $billable5 = max(0, $totals['total_credits_five'] - 1000);
             $overage5  = round($billable5 / 100 * 1.5, 2);
+            $adjBillable1 = max(0, $adjustedTotals['total_credits_one'] - 1000);
+            $adjOverage1  = round($adjBillable1 / 100 * 1.5, 2);
+            $adjBillable5 = max(0, $adjustedTotals['total_credits_five'] - 1000);
+            $adjOverage5  = round($adjBillable5 / 100 * 1.5, 2);
+            $wordsSaved   = $totals['total_words'] - $adjustedTotals['total_words'];
         @endphp
 
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -57,6 +62,59 @@
                 @else
                     <div class="text-xs mt-1 text-gray-400 dark:text-zinc-500">within 1,000 credit plan</div>
                 @endif
+            </div>
+        </div>
+
+        {{-- Adjusted totals (deduplication) --}}
+        <div class="rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4">
+            <div class="flex items-center gap-2 mb-3">
+                <h3 class="text-sm font-medium text-gray-700 dark:text-zinc-300">Adjusted for repeated content</h3>
+                <span class="text-xs text-gray-400 dark:text-zinc-500">— identical segments across pages counted once</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {{-- Unique words --}}
+                <div class="rounded-lg bg-gray-50 dark:bg-zinc-800/50 p-3">
+                    <div class="text-xs text-gray-500 dark:text-zinc-400 mb-1">Unique words</div>
+                    <div class="text-2xl font-semibold text-gray-900 dark:text-zinc-100">{{ number_format($adjustedTotals['total_words']) }}</div>
+                    @if ($wordsSaved > 0)
+                        <div class="text-xs mt-1 text-gray-400 dark:text-zinc-500">{{ number_format($wordsSaved) }} words excluded (repeated)</div>
+                    @endif
+                </div>
+
+                {{-- Adjusted credits × 1 --}}
+                <div class="rounded-lg bg-gray-50 dark:bg-zinc-800/50 p-3">
+                    <div class="text-xs text-gray-500 dark:text-zinc-400 mb-1">Credits &times; 1 language</div>
+                    <div class="text-2xl font-semibold text-gray-900 dark:text-zinc-100">{{ number_format($adjustedTotals['total_credits_one'], 1) }}</div>
+                    @if ($adjustedTotals['total_credits_one'] > 1000)
+                        <div class="text-xs mt-1 text-amber-500 dark:text-amber-400 font-medium">+${{ number_format($adjOverage1, 2) }} overage</div>
+                        <div class="text-xs mt-1.5 text-gray-400 dark:text-zinc-500 space-y-0.5 leading-relaxed border-t border-gray-200 dark:border-zinc-700 pt-1.5">
+                            <div>{{ number_format($adjustedTotals['total_credits_one'], 1) }} total credits</div>
+                            <div>− 1,000 included in plan</div>
+                            <div>= {{ number_format($adjBillable1, 1) }} billable credits</div>
+                            <div class="font-medium text-gray-500 dark:text-zinc-400">{{ number_format($adjBillable1, 1) }} ÷ 100 × $1.50 = ${{ number_format($adjOverage1, 2) }}</div>
+                        </div>
+                    @else
+                        <div class="text-xs mt-1 text-gray-400 dark:text-zinc-500">within 1,000 credit plan</div>
+                    @endif
+                </div>
+
+                {{-- Adjusted credits × 5 --}}
+                <div class="rounded-lg bg-gray-50 dark:bg-zinc-800/50 p-3">
+                    <div class="text-xs text-gray-500 dark:text-zinc-400 mb-1">Credits &times; 5 languages</div>
+                    <div class="text-2xl font-semibold text-gray-900 dark:text-zinc-100">{{ number_format($adjustedTotals['total_credits_five'], 1) }}</div>
+                    @if ($adjustedTotals['total_credits_five'] > 1000)
+                        <div class="text-xs mt-1 text-amber-500 dark:text-amber-400 font-medium">+${{ number_format($adjOverage5, 2) }} overage</div>
+                        <div class="text-xs mt-1.5 text-gray-400 dark:text-zinc-500 space-y-0.5 leading-relaxed border-t border-gray-200 dark:border-zinc-700 pt-1.5">
+                            <div>{{ number_format($adjustedTotals['total_credits_five'], 1) }} total credits</div>
+                            <div>− 1,000 included in plan</div>
+                            <div>= {{ number_format($adjBillable5, 1) }} billable credits</div>
+                            <div class="font-medium text-gray-500 dark:text-zinc-400">{{ number_format($adjBillable5, 1) }} ÷ 100 × $1.50 = ${{ number_format($adjOverage5, 2) }}</div>
+                        </div>
+                    @else
+                        <div class="text-xs mt-1 text-gray-400 dark:text-zinc-500">within 1,000 credit plan</div>
+                    @endif
+                </div>
             </div>
         </div>
 

@@ -15,8 +15,8 @@
                     @foreach ($row->translatable_content as $seg)
                         @php
                             $segWc = $seg['word_count'] ?? null;
-                            $segC1 = $seg['credits_one'] ?? ($segWc !== null ? round($segWc * 0.002098, 4) : null);
-                            $segC5 = $seg['credits_five'] ?? ($segWc !== null ? round($segWc * 0.003725, 4) : null);
+                            $segC1 = $seg['credits_one'] ?? ($segWc !== null ? round(0.0711 + $segWc * 0.002098, 4) : null);
+                            $segC5 = $seg['credits_five'] ?? ($segWc !== null ? round(0.1265 + $segWc * 0.003725, 4) : null);
                             $badgeClass = match($seg['type']) {
                                 'title'       => 'badge-title',
                                 'description' => 'badge-description',

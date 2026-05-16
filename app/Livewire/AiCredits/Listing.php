@@ -22,7 +22,11 @@ class Listing extends Component
     public function mount(Website $website): void
     {
         $this->website = $website;
-        $this->strapiMdHtml = Str::markdown(file_get_contents(base_path('strapi.md')));
+        $this->strapiMdHtml = preg_replace(
+            '/<a\s/i',
+            '<a target="_blank" rel="noopener noreferrer" ',
+            Str::markdown(file_get_contents(base_path('strapi.md')))
+        );
 
         if (! PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $website->id))->exists()) {
             $this->calculate();
@@ -56,6 +60,35 @@ class Listing extends Component
         ];
     }
 
+    public function getAdjustedTotalsProperty(): array
+    {
+        $seen = [];
+        $totalWords = 0;
+        $creditsOne = 0.0;
+        $creditsFive = 0.0;
+
+        PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $this->website->id))
+            ->get(['translatable_content'])
+            ->each(function ($record) use (&$seen, &$totalWords, &$creditsOne, &$creditsFive) {
+                foreach ($record->translatable_content ?? [] as $segment) {
+                    $text = $segment['text'] ?? '';
+                    if ($text === '' || isset($seen[$text])) {
+                        continue;
+                    }
+                    $seen[$text] = true;
+                    $totalWords += (int) ($segment['word_count'] ?? 0);
+                    $creditsOne += (float) ($segment['credits_one'] ?? 0);
+                    $creditsFive += (float) ($segment['credits_five'] ?? 0);
+                }
+            });
+
+        return [
+            'total_words' => $totalWords,
+            'total_credits_one' => round($creditsOne, 4),
+            'total_credits_five' => round($creditsFive, 4),
+        ];
+    }
+
     public function getCreditsProperty()
     {
         return PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $this->website->id))
@@ -68,6 +101,7 @@ class Listing extends Component
         return view('livewire.ai-credits.listing', [
             'credits' => $this->credits,
             'totals' => $this->totals,
+            'adjustedTotals' => $this->adjustedTotals,
         ]);
     }
 }

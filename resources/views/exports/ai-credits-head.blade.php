@@ -95,7 +95,39 @@
         .page-btn:disabled { opacity: .4; cursor: default; }
 
         .page-group { display: none; }
-        .page-group.active { display: contents; }
+        tr.main-row.active { display: table-row; }
+        tr.content-row.active.visible { display: table-row; }
+
+        /* Info modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
+        .modal-overlay.open { display: flex; }
+        .modal { position: relative; background: #fff; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,.25); max-width: 640px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; border: 1px solid #e5e7eb; overflow: hidden; }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f3f4f6; background: linear-gradient(to right, rgba(73,69,255,.05), transparent); flex-shrink: 0; }
+        .modal-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(73,69,255,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 12px; }
+        .modal-title { font-size: 14px; font-weight: 600; color: #111; margin: 0; }
+        .modal-subtitle { font-size: 12px; color: #9ca3af; margin: 2px 0 0; }
+        .modal-close { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .modal-close:hover { background: #f3f4f6; color: #374151; }
+        .modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+        .modal-footer { padding: 12px 24px; border-top: 1px solid #f3f4f6; background: #f9fafb; font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+        .modal-footer a { color: #4945FF; text-decoration: none; }
+        .modal-footer a:hover { text-decoration: underline; }
+        /* Markdown content inside modal */
+        .strapi-ref h2 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: #111; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+        .strapi-ref h3 { font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: #374151; }
+        .strapi-ref p { margin: 0 0 10px; line-height: 1.6; color: #374151; font-size: 13px; }
+        .strapi-ref ul, .strapi-ref ol { margin: 0 0 10px; padding-left: 20px; }
+        .strapi-ref li { margin-bottom: 4px; line-height: 1.6; color: #374151; font-size: 13px; }
+        .strapi-ref strong { font-weight: 600; color: #111; }
+        .strapi-ref code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+        .strapi-ref table { width: 100%; border-collapse: collapse; margin: 0 0 10px; font-size: 12px; }
+        .strapi-ref th { padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; text-align: left; color: #374151; }
+        .strapi-ref td { padding: 6px 10px; border: 1px solid #e5e7eb; color: #374151; }
+        .strapi-ref a { color: #4945FF; }
+        .strapi-ref hr { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+        /* Info button */
+        .info-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0; display: inline-flex; align-items: center; vertical-align: middle; }
+        .info-btn:hover { color: #4945FF; }
     </style>
 </head>
 <body>
@@ -111,6 +143,11 @@
     $overage1  = round($billable1 / 100 * 1.5, 2);
     $billable5 = max(0, $totals['total_credits_five'] - 1000);
     $overage5  = round($billable5 / 100 * 1.5, 2);
+    $adjBillable1 = max(0, $adjustedTotals['total_credits_one'] - 1000);
+    $adjOverage1  = round($adjBillable1 / 100 * 1.5, 2);
+    $adjBillable5 = max(0, $adjustedTotals['total_credits_five'] - 1000);
+    $adjOverage5  = round($adjBillable5 / 100 * 1.5, 2);
+    $wordsSaved   = $totals['total_words'] - $adjustedTotals['total_words'];
 @endphp
 
 <div class="cards">
@@ -153,9 +190,95 @@
         @endif
     </div>
 </div>
-<div class="footnote">
-    Estimates use: 1 language → 0.0711 + 0.002098&times;words; 5 languages → 0.1265 + 0.003725&times;words.
-    Strapi Growth plan includes 1,000 credits/month ($45/mo); overages at $1.50 per 100 credits.
+<div style="margin-bottom:8px;">
+    <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">
+        Adjusted for repeated content
+        <span style="font-weight:400;color:#9ca3af;">— identical segments across pages counted once</span>
+    </div>
+    <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+        <div class="card">
+            <div class="card-label">Unique words</div>
+            <div class="card-value">{{ number_format($adjustedTotals['total_words']) }}</div>
+            @if ($wordsSaved > 0)
+                <div class="card-note">{{ number_format($wordsSaved) }} words excluded (repeated)</div>
+            @endif
+        </div>
+        <div class="card">
+            <div class="card-label">Credits × 1 language</div>
+            <div class="card-value">{{ number_format($adjustedTotals['total_credits_one'], 1) }}</div>
+            @if ($adjustedTotals['total_credits_one'] > 1000)
+                <div class="card-note warn">+${{ number_format($adjOverage1, 2) }} overage</div>
+                <div class="card-calc">
+                    {{ number_format($adjustedTotals['total_credits_one'], 1) }} total credits<br>
+                    − 1,000 included in plan<br>
+                    = {{ number_format($adjBillable1, 1) }} billable credits<br>
+                    <strong>{{ number_format($adjBillable1, 1) }} ÷ 100 × $1.50 = ${{ number_format($adjOverage1, 2) }}</strong>
+                </div>
+            @else
+                <div class="card-note">within 1,000 credit plan</div>
+            @endif
+        </div>
+        <div class="card">
+            <div class="card-label">Credits × 5 languages</div>
+            <div class="card-value">{{ number_format($adjustedTotals['total_credits_five'], 1) }}</div>
+            @if ($adjustedTotals['total_credits_five'] > 1000)
+                <div class="card-note warn">+${{ number_format($adjOverage5, 2) }} overage</div>
+                <div class="card-calc">
+                    {{ number_format($adjustedTotals['total_credits_five'], 1) }} total credits<br>
+                    − 1,000 included in plan<br>
+                    = {{ number_format($adjBillable5, 1) }} billable credits<br>
+                    <strong>{{ number_format($adjBillable5, 1) }} ÷ 100 × $1.50 = ${{ number_format($adjOverage5, 2) }}</strong>
+                </div>
+            @else
+                <div class="card-note">within 1,000 credit plan</div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<div class="footnote" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span>
+        Estimates use: 1 language → 0.0711 + 0.002098&times;words; 5 languages → 0.1265 + 0.003725&times;words (per segment).
+        Strapi Growth plan includes 1,000 credits/month ($45/mo); overages at $1.50 per 100 credits.
+    </span>
+    <button class="info-btn" onclick="openInfoModal()" title="View Strapi AI Credits reference">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+        </svg>
+    </button>
+</div>
+
+<!-- Strapi AI Credits reference modal -->
+<div id="info-modal" class="modal-overlay" onclick="if(event.target===this)closeInfoModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <div style="display:flex;align-items:center;">
+                <div class="modal-icon">
+                    <svg style="width:16px;height:16px;color:#4945FF" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-.5 5a.5.5 0 0 1 1 0v5.5H17a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5V7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="modal-title">Strapi AI Credits Reference</div>
+                    <div class="modal-subtitle">Growth plan · $45/mo · 1,000 credits included</div>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeInfoModal()" title="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body strapi-ref">
+            {!! $strapiMdHtml !!}
+        </div>
+        <div class="modal-footer">
+            Source:
+            <a href="https://strapi.io/pricing-cms" target="_blank">strapi.io/pricing-cms</a>
+            &nbsp;·&nbsp;
+            <a href="https://support.strapi.io/articles/2817318284-ai-translation-credit-usage" target="_blank">AI Translation Credit Usage</a>
+        </div>
+    </div>
 </div>
 
 <div class="table-wrap">

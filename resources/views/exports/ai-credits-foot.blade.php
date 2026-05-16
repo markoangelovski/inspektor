@@ -75,6 +75,18 @@
     window.toggleRow = toggleRow;
     renderPage(1);
 })();
+
+function openInfoModal() {
+    document.getElementById('info-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeInfoModal() {
+    document.getElementById('info-modal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeInfoModal();
+});
 </script>
 </body>
 </html>
