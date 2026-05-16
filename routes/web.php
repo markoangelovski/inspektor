@@ -41,8 +41,10 @@ Route::middleware(['auth'])->group(function () {
     // Content Inspector routes:
     Route::get('/websites', WebsitesListing::class)->name('websites.listing');
     Route::get('/websites/{website}/info', WebsitesDetail::class)->name('websites.detail');
+
     Route::get('/websites/{website}/pages', PagesListing::class)->name('pages.listing');
     Route::get('/websites/{website}/pages/expand', PagesExpand::class)->name('pages.expand');
+
     Route::get('/websites/{website}/content-extraction', ContentExtractionListing::class)->name('content-extraction.listing');
 
     Route::get('/websites/{website}/ai-credits', AiCreditsListing::class)->name('ai-credits.listing');

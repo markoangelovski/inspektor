@@ -64,12 +64,31 @@
                                 </h4>
                                 <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-zinc-400">
                                     <span>{{ $run->processed_pages }} pages processed</span>
+                                    @if ($run->started_at)
+                                        <span>•</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <flux:icon.play class="size-3" />
+                                            {{ $run->started_at->format('H:i') }}
+                                        </span>
+                                    @endif
+                                    @if ($run->finished_at)
+                                        <span>•</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <flux:icon.stop class="size-3" />
+                                            {{ $run->finished_at->format('H:i') }}
+                                        </span>
+                                        <span>•</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <flux:icon.clock class="size-3" />
+                                            {{ $run->started_at->diffForHumans($run->finished_at, true) }}
+                                        </span>
+                                    @endif
                                     <span>•</span>
                                     <span
                                         class="{{ match ($runStatus) {
                                             'running' => 'text-blue-600 dark:text-blue-400',
                                             'paused' => 'text-indigo-600 dark:text-indigo-400',
-                                            'completed' => 'text-gray-600 dark:text-zinc-400',
+                                            'completed' => 'text-green-600 dark:text-green-400',
                                             'completed_with_errors' => 'text-amber-600 dark:text-yellow-400',
                                             'failed' => 'text-red-600 dark:text-red-400',
                                             default => 'text-gray-600 dark:text-zinc-400',
