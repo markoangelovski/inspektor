@@ -37,6 +37,16 @@ class Website extends Model
         'pages_last_sync',
         'pages_message',
         'pages_processing',
+
+        'ai_credits_page_count',
+        'ai_credits_word_count',
+        'ai_credits_one_language',
+        'ai_credits_five_languages',
+        'ai_credits_unique_word_count',
+        'ai_credits_unique_one_language',
+        'ai_credits_unique_five_languages',
+        'ai_credits_calculated_at',
+        'ai_credits_calculating',
     ];
 
     protected $casts = [
@@ -49,6 +59,16 @@ class Website extends Model
         'pages_fetched' => 'boolean',
         'pages_count' => 'integer',
         'pages_last_sync' => 'datetime',
+
+        'ai_credits_page_count' => 'integer',
+        'ai_credits_word_count' => 'integer',
+        'ai_credits_one_language' => 'float',
+        'ai_credits_five_languages' => 'float',
+        'ai_credits_unique_word_count' => 'integer',
+        'ai_credits_unique_one_language' => 'float',
+        'ai_credits_unique_five_languages' => 'float',
+        'ai_credits_calculated_at' => 'datetime',
+        'ai_credits_calculating' => 'boolean',
     ];
 
     /**

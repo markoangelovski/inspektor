@@ -1,13 +1,44 @@
 <div>
+    {{-- Self-terminating poll: only present while job is running --}}
+    @if ($website->ai_credits_calculating)
+        <div wire:poll.2s="checkCalculating" class="hidden"></div>
+    @endif
+
     <x-inspektor.website-detail.breadcrumbs :website="$website" current="AI Credits" />
 
     <x-inspektor.website-detail.page-header :name="$website->name" :url="$website->url" />
 
-    <x-inspektor.website-detail.page-nav-tabs :website="$website" />
+    <x-inspektor.website-detail.page-nav-tabs :website="$website" active="ai-credits" />
 
     <div class="space-y-6 mt-6">
 
         {{-- Dashboard summary --}}
+        @if ($website->ai_credits_calculated_at === null && $website->ai_credits_calculating)
+
+            {{-- Skeleton: initial calculation in progress --}}
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                @for ($_ = 0; $_ < 4; $_++)
+                    <div class="rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4">
+                        <div class="h-3 w-16 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse mb-3"></div>
+                        <div class="h-8 w-24 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse"></div>
+                    </div>
+                @endfor
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4">
+                <div class="h-3 w-40 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse mb-4"></div>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    @for ($_ = 0; $_ < 3; $_++)
+                        <div class="rounded-lg bg-gray-50 dark:bg-zinc-800/50 p-3">
+                            <div class="h-3 w-20 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse mb-3"></div>
+                            <div class="h-8 w-24 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse"></div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+
+        @else
+
         @php
             $billable1 = max(0, $totals['total_credits_one'] - 1000);
             $overage1  = round($billable1 / 100 * 1.5, 2);
@@ -118,6 +149,8 @@
             </div>
         </div>
 
+        @endif
+
         {{-- Footnote with info button + Strapi reference modal --}}
         <div x-data="{ showInfo: false }" class="-mt-2">
             <div class="flex items-center gap-1.5">
@@ -181,9 +214,14 @@
                 <h2 class="text-lg font-medium text-gray-900 dark:text-zinc-100">Per-page estimates</h2>
 
                 <div class="flex items-center gap-2">
-                    <flux:button wire:click="calculate" wire:loading.attr="disabled" wire:target="calculate"
-                        variant="ghost" size="sm" icon="arrow-path" class="cursor-pointer">
-                        <span wire:loading.remove wire:target="calculate">Recalculate</span>
+                    <flux:button wire:click="calculate"
+                        wire:loading.attr="disabled" wire:target="calculate"
+                        :disabled="$website->ai_credits_calculating"
+                        variant="ghost" size="sm" icon="arrow-path"
+                        class="cursor-pointer {{ $website->ai_credits_calculating ? '[&_svg]:animate-spin' : '' }}">
+                        <span wire:loading.remove wire:target="calculate">
+                            {{ $website->ai_credits_calculating ? 'Calculating…' : 'Recalculate' }}
+                        </span>
                         <span wire:loading wire:target="calculate">Calculating&hellip;</span>
                     </flux:button>
 
@@ -212,8 +250,14 @@
 
                     @forelse ($credits as $row)
                         {{-- One <tbody> per row group — Alpine scope covers both rows --}}
-                        <tbody wire:key="group-{{ $row->id }}" x-data="{ open: false }">
-                            <tr @click="open = !open"
+                        <tbody wire:key="group-{{ $row->id }}" x-data="{ open: false, loading: false }">
+                            <tr @click="
+                                    open = !open;
+                                    if (open && $wire.loadedSegments['{{ $row->id }}'] === undefined) {
+                                        loading = true;
+                                        $wire.loadSegments('{{ $row->id }}').then(() => loading = false);
+                                    }
+                                "
                                 class="border-b border-gray-100 dark:border-zinc-800/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors">
                                 <td class="px-4 py-3 text-gray-700 dark:text-zinc-300 max-w-xs">
                                     <span class="truncate block" title="{{ $row->url }}">{{ $row->url }}</span>
@@ -239,54 +283,73 @@
                                 </td>
                             </tr>
 
-                            {{-- Expanded content: sub-table aligned to parent columns --}}
+                            {{-- Expanded content: skeleton while loading, segments once fetched --}}
                             <tr x-show="open" x-cloak
                                 class="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/30">
                                 <td colspan="5" class="p-0">
-                                    @if (count($row->translatable_content ?? []) > 0)
-                                        <table class="w-full text-sm">
-                                            <tbody>
-                                                @foreach ($row->translatable_content as $segment)
-                                                    @php
-                                                        $segWc = $segment['word_count'] ?? null;
-                                                        $segC1 = $segment['credits_one'] ?? ($segWc !== null ? round(0.0711 + $segWc * 0.002098, 4) : null);
-                                                        $segC5 = $segment['credits_five'] ?? ($segWc !== null ? round(0.1265 + $segWc * 0.003725, 4) : null);
-                                                    @endphp
-                                                    <tr class="border-b border-gray-100 dark:border-zinc-800/40 last:border-0">
-                                                        <td class="px-4 py-2 text-gray-700 dark:text-zinc-300">
-                                                            <div class="flex items-start gap-2">
-                                                                <span class="shrink-0 text-xs font-medium uppercase tracking-wide px-2 py-0.5 rounded mt-0.5
-                                                                    @switch($segment['type'])
-                                                                        @case('title') bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 @break
-                                                                        @case('description') bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 @break
-                                                                        @case('heading') bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 @break
-                                                                        @case('paragraph') bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 @break
-                                                                        @case('list-item') bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 @break
-                                                                        @case('cell') bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 @break
-                                                                        @case('alt-text') bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 @break
-                                                                        @default bg-gray-100 text-gray-600 dark:bg-zinc-700 dark:text-zinc-300
-                                                                    @endswitch
-                                                                ">{{ $segment['type'] }}</span>
-                                                                <span class="leading-relaxed">{{ $segment['text'] }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-24 align-top">
-                                                            {{ $segWc !== null ? number_format($segWc) : '' }}
-                                                        </td>
-                                                        <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-32 align-top">
-                                                            {{ $segC1 !== null ? number_format($segC1, 2) : '' }}
-                                                        </td>
-                                                        <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-32 align-top">
-                                                            {{ $segC5 !== null ? number_format($segC5, 2) : '' }}
-                                                        </td>
-                                                        <td class="w-10"></td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    @else
-                                        <div class="px-4 py-3 text-sm text-gray-400 dark:text-zinc-500">No translatable content extracted for this page.</div>
-                                    @endif
+
+                                    {{-- Skeleton --}}
+                                    <div x-show="loading" class="px-4 py-3 space-y-2.5">
+                                        @for ($_ = 0; $_ < 4; $_++)
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-4 w-16 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse shrink-0"></div>
+                                                <div class="h-4 flex-1 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse"></div>
+                                                <div class="h-4 w-10 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse shrink-0"></div>
+                                                <div class="h-4 w-14 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse shrink-0"></div>
+                                                <div class="h-4 w-14 rounded bg-gray-200 dark:bg-zinc-700 animate-pulse shrink-0"></div>
+                                                <div class="w-10 shrink-0"></div>
+                                            </div>
+                                        @endfor
+                                    </div>
+
+                                    {{-- Loaded segments --}}
+                                    <div x-show="!loading">
+                                        @if (isset($loadedSegments[$row->id]) && count($loadedSegments[$row->id]) > 0)
+                                            <table class="w-full text-sm">
+                                                <tbody>
+                                                    @foreach ($loadedSegments[$row->id] as $segment)
+                                                        @php
+                                                            $segWc = $segment['word_count'] ?? null;
+                                                            $segC1 = $segment['credits_one'] ?? ($segWc !== null ? round(0.0711 + $segWc * 0.002098, 4) : null);
+                                                            $segC5 = $segment['credits_five'] ?? ($segWc !== null ? round(0.1265 + $segWc * 0.003725, 4) : null);
+                                                        @endphp
+                                                        <tr class="border-b border-gray-100 dark:border-zinc-800/40 last:border-0">
+                                                            <td class="px-4 py-2 text-gray-700 dark:text-zinc-300">
+                                                                <div class="flex items-start gap-2">
+                                                                    <span class="shrink-0 text-xs font-medium uppercase tracking-wide px-2 py-0.5 rounded mt-0.5
+                                                                        @switch($segment['type'])
+                                                                            @case('title') bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 @break
+                                                                            @case('description') bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 @break
+                                                                            @case('heading') bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 @break
+                                                                            @case('paragraph') bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 @break
+                                                                            @case('list-item') bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 @break
+                                                                            @case('cell') bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 @break
+                                                                            @case('alt-text') bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 @break
+                                                                            @default bg-gray-100 text-gray-600 dark:bg-zinc-700 dark:text-zinc-300
+                                                                        @endswitch
+                                                                    ">{{ $segment['type'] }}</span>
+                                                                    <span class="leading-relaxed">{{ $segment['text'] }}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-24 align-top">
+                                                                {{ $segWc !== null ? number_format($segWc) : '' }}
+                                                            </td>
+                                                            <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-32 align-top">
+                                                                {{ $segC1 !== null ? number_format($segC1, 2) : '' }}
+                                                            </td>
+                                                            <td class="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-zinc-400 w-32 align-top">
+                                                                {{ $segC5 !== null ? number_format($segC5, 2) : '' }}
+                                                            </td>
+                                                            <td class="w-10"></td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        @elseif (isset($loadedSegments[$row->id]))
+                                            <div class="px-4 py-3 text-sm text-gray-400 dark:text-zinc-500">No translatable content extracted for this page.</div>
+                                        @endif
+                                    </div>
+
                                 </td>
                             </tr>
                         </tbody>
@@ -294,8 +357,11 @@
                         <tbody>
                             <tr>
                                 <td colspan="5" class="px-4 py-10 text-center text-gray-500 dark:text-zinc-500">
-                                    <div wire:loading wire:target="calculate">Calculating credits&hellip;</div>
-                                    <div wire:loading.remove wire:target="calculate">No data available. Click Recalculate to generate estimates.</div>
+                                    @if ($website->ai_credits_calculating)
+                                        Calculating credits&hellip;
+                                    @else
+                                        No data available. Click Recalculate to generate estimates.
+                                    @endif
                                 </td>
                             </tr>
                         </tbody>

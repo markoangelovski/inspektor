@@ -1,7 +1,7 @@
-@props(['website'])
+@props(['website', 'active' => null])
 
 @php
-    $activeTab = match (true) {
+    $activeTab = $active ?? match (true) {
         request()->routeIs('pages.listing', 'pages.expand') => 'pages',
         request()->routeIs('content-extraction.listing') => 'content-extraction',
         request()->routeIs('ai-credits.listing') => 'ai-credits',

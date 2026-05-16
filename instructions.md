@@ -118,3 +118,5 @@ The php artisan scout command set in Laravel Scout provides essential tools for 
 docker compose -f docker-compose.img.build.yml up --build
 
 To remove volumes when using Docker Compose, run docker compose down --volumes, which stops containers and removes named volumes declared in the volumes section of the Compose file as well as anonymous volumes attached to containers.
+
+claude --resume a53b3d5c-3107-4708-8c51-50bc99277abc

@@ -57,7 +57,7 @@
     </flux:modal>
 
     {{-- Nav tabs --}}
-    <x-inspektor.website-detail.page-nav-tabs :website="$website" />
+    <x-inspektor.website-detail.page-nav-tabs :website="$website" active="info" />
 
     <div class="space-y-6 mt-6">
         {{-- Website metadata --}}

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PageAiCredit;
 use App\Models\Website;
 use Illuminate\Support\Str;
 
@@ -10,43 +9,19 @@ class AiCreditsExportController extends Controller
 {
     public function __invoke(Website $website)
     {
-        $totalCount = PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $website->id))->count();
-
-        $result = PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $website->id))
-            ->selectRaw('COUNT(*) as page_count, SUM(word_count) as total_words, SUM(credits_one_language) as total_credits_one, SUM(credits_five_languages) as total_credits_five')
-            ->first();
+        $totalCount = (int) ($website->ai_credits_page_count ?? 0);
 
         $totals = [
-            'page_count' => (int) ($result->page_count ?? 0),
-            'total_words' => (int) ($result->total_words ?? 0),
-            'total_credits_one' => round((float) ($result->total_credits_one ?? 0), 4),
-            'total_credits_five' => round((float) ($result->total_credits_five ?? 0), 4),
+            'page_count' => $totalCount,
+            'total_words' => (int) ($website->ai_credits_word_count ?? 0),
+            'total_credits_one' => (float) ($website->ai_credits_one_language ?? 0),
+            'total_credits_five' => (float) ($website->ai_credits_five_languages ?? 0),
         ];
 
-        $seen = [];
-        $adjWords = 0;
-        $adjCreditsOne = 0.0;
-        $adjCreditsFive = 0.0;
-
-        PageAiCredit::whereHas('page', fn ($q) => $q->where('website_id', $website->id))
-            ->get(['translatable_content'])
-            ->each(function ($record) use (&$seen, &$adjWords, &$adjCreditsOne, &$adjCreditsFive) {
-                foreach ($record->translatable_content ?? [] as $segment) {
-                    $text = $segment['text'] ?? '';
-                    if ($text === '' || isset($seen[$text])) {
-                        continue;
-                    }
-                    $seen[$text] = true;
-                    $adjWords += (int) ($segment['word_count'] ?? 0);
-                    $adjCreditsOne += (float) ($segment['credits_one'] ?? 0);
-                    $adjCreditsFive += (float) ($segment['credits_five'] ?? 0);
-                }
-            });
-
         $adjustedTotals = [
-            'total_words' => $adjWords,
-            'total_credits_one' => round($adjCreditsOne, 4),
-            'total_credits_five' => round($adjCreditsFive, 4),
+            'total_words' => (int) ($website->ai_credits_unique_word_count ?? 0),
+            'total_credits_one' => (float) ($website->ai_credits_unique_one_language ?? 0),
+            'total_credits_five' => (float) ($website->ai_credits_unique_five_languages ?? 0),
         ];
 
         $strapiMdHtml = preg_replace(

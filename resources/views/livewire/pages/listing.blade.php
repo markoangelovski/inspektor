@@ -3,7 +3,7 @@
 
     <x-inspektor.website-detail.page-header :name="$website->name" :url="$website->url" />
 
-    <x-inspektor.website-detail.page-nav-tabs :website="$website" />
+    <x-inspektor.website-detail.page-nav-tabs :website="$website" active="pages" />
 
     {{-- Pages section --}}
     <div class="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 mt-6">
