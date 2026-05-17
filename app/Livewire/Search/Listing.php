@@ -79,6 +79,7 @@ class Listing extends Component
             'bodySnippet' => $this->sanitize(
                 $bodyText && str_contains($bodyText, '<em>') ? $this->excerptAround($bodyText) : null
             ),
+            'path' => $this->sanitize($result->page?->path),
             'websiteId' => $result->page?->website_id,
         ];
     }

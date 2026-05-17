@@ -3,6 +3,7 @@
 namespace App\Domain\ContentExtraction\Models;
 
 use App\Models\Page;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,6 @@ class PageContent extends Model
 
     protected $fillable = [
         'page_id',
-        'extractor_version',
         'content',
         'extracted_at',
     ];
@@ -34,11 +34,17 @@ class PageContent extends Model
         return $this->belongsTo(Page::class);
     }
 
+    protected function makeAllSearchableUsing(Builder $query): Builder
+    {
+        return $query->with('page');
+    }
+
     public function toSearchableArray(): array
     {
         $head = $this->content['head'] ?? [];
 
         return [
+            'path' => $this->page?->path ?? '',
             'title' => $head['title'] ?? $head['meta']['og:title'] ?? '',
             'description' => $head['meta']['description'] ?? $head['meta']['og:description'] ?? '',
             'canonical' => $head['canonical'] ?? $head['meta']['og:url'] ?? '',
