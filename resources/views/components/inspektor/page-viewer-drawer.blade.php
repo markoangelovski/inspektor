@@ -27,7 +27,12 @@
                 <div class="space-y-3">
                     <div>
                         <span class="text-gray-500 dark:text-zinc-500">URL:</span>
-                        <p class="mt-1 break-all text-gray-700 dark:text-zinc-300">{{ $viewerPage->url }}</p>
+                        <p class="mt-1 break-all text-gray-700 dark:text-zinc-300">
+                            <a href="{{ $viewerPage->url }}" target="_blank" rel="noopener noreferrer"
+                                class="text-gray-500 hover:text-blue-600 hover:underline truncate block">
+                                {{ $viewerPage->url }}
+                        </p>
+                        </a>
                     </div>
                     <div>
                         <span class="text-gray-500 dark:text-zinc-500">Path:</span>

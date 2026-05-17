@@ -7,8 +7,7 @@
 
     <div class="text-end mb-4">
         <flux:modal.trigger name="website-modal">
-            <flux:button wire:click="dispatch('open-website-modal', {mode: 'create'})" variant="primary"
-                icon="plus-circle" class="cursor-pointer">Add Website</flux:button>
+            <flux:button variant="primary" icon="plus-circle" class="cursor-pointer">Add Website</flux:button>
         </flux:modal.trigger>
     </div>
 

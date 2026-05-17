@@ -152,60 +152,56 @@
         @endif
 
         {{-- Footnote with info button + Strapi reference modal --}}
-        <div x-data="{ showInfo: false }" class="-mt-2">
-            <div class="flex items-center gap-1.5">
-                <span class="text-xs text-gray-400 dark:text-zinc-500">
-                    Estimates use: 1 language → 0.0711 + 0.002098&times;words; 5 languages → 0.1265 + 0.003725&times;words.
-                    Strapi Growth plan includes 1,000 credits/month ($45/mo); overages billed at $1.50 per 100 credits.
-                </span>
-                <button @click="showInfo = true" type="button"
+        <div class="-mt-2 flex items-center gap-1.5">
+            <span class="text-xs text-gray-400 dark:text-zinc-500">
+                Estimates use: 1 language → 0.0711 + 0.002098&times;words; 5 languages → 0.1265 + 0.003725&times;words.
+                Strapi Growth plan includes 1,000 credits/month ($45/mo); overages billed at $1.50 per 100 credits.
+            </span>
+            <flux:modal.trigger name="strapi-info">
+                <button type="button"
                     class="shrink-0 text-gray-400 dark:text-zinc-500 hover:text-[#4945FF] dark:hover:text-indigo-400 transition-colors cursor-pointer"
                     title="View Strapi AI Credits reference">
                     <flux:icon.information-circle class="size-4" />
                 </button>
-            </div>
+            </flux:modal.trigger>
+        </div>
 
-            {{-- Strapi.md modal --}}
-            <div x-show="showInfo" x-cloak
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
-                @keydown.escape.window="showInfo = false">
-                <div @click="showInfo = false" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-
-                <div class="relative bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-gray-200 dark:border-zinc-800 overflow-hidden">
-
-                    {{-- Modal header --}}
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-[#4945FF]/5 to-transparent shrink-0">
-                        <div class="flex items-center gap-3">
-                            <div class="size-7 rounded-lg bg-[#4945FF]/10 flex items-center justify-center shrink-0">
-                                <svg class="size-4 text-[#4945FF]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-.5 5a.5.5 0 0 1 1 0v5.5H17a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5V7z"/></svg>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-zinc-100">Strapi AI Credits Reference</h3>
-                                <p class="text-xs text-gray-400 dark:text-zinc-500">Growth plan · $45/mo · 1,000 credits included</p>
-                            </div>
+        <flux:modal name="strapi-info" class="max-w-2xl overflow-hidden" :closable="false">
+            {{-- Modal header --}}
+            <div class="-mx-6 -mt-6 px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-[#4945FF]/5 to-transparent">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="size-7 rounded-lg bg-[#4945FF]/10 flex items-center justify-center shrink-0">
+                            <svg class="size-4 text-[#4945FF]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-.5 5a.5.5 0 0 1 1 0v5.5H17a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5V7z"/></svg>
                         </div>
-                        <button @click="showInfo = false" type="button"
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-zinc-100">Strapi AI Credits Reference</h3>
+                            <p class="text-xs text-gray-400 dark:text-zinc-500">Growth plan · $45/mo · 1,000 credits included</p>
+                        </div>
+                    </div>
+                    <flux:modal.close>
+                        <button type="button"
                             class="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors cursor-pointer rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-zinc-800">
                             <flux:icon.x-mark class="size-4" />
                         </button>
-                    </div>
-
-                    {{-- Modal body --}}
-                    <div class="overflow-y-auto px-6 py-5 strapi-ref-content">
-                        {!! $strapiMdHtml !!}
-                    </div>
-
-                    {{-- Modal footer --}}
-                    <div class="px-6 py-3 border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 shrink-0">
-                        <p class="text-xs text-gray-400 dark:text-zinc-500">
-                            Source: <a href="https://strapi.io/pricing-cms" target="_blank" class="text-[#4945FF] dark:text-indigo-400 hover:underline">strapi.io/pricing-cms</a>
-                            &nbsp;·&nbsp;
-                            <a href="https://support.strapi.io/articles/2817318284-ai-translation-credit-usage" target="_blank" class="text-[#4945FF] dark:text-indigo-400 hover:underline">AI Translation Credit Usage</a>
-                        </p>
-                    </div>
+                    </flux:modal.close>
                 </div>
             </div>
-        </div>
+
+            {{-- Modal body --}}
+            <div class="overflow-y-auto max-h-[60vh] py-5 strapi-ref-content">
+                {!! $strapiMdHtml !!}
+            </div>
+
+            {{-- Modal footer --}}
+            <div class="-mx-6 -mb-6 px-6 py-3 border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
+                <p class="text-xs text-gray-400 dark:text-zinc-500">
+                    Source: <a href="https://strapi.io/pricing-cms" target="_blank" class="text-[#4945FF] dark:text-indigo-400 hover:underline">strapi.io/pricing-cms</a>
+                    &nbsp;·&nbsp;
+                    <a href="https://support.strapi.io/articles/2817318284-ai-translation-credit-usage" target="_blank" class="text-[#4945FF] dark:text-indigo-400 hover:underline">AI Translation Credit Usage</a>
+                </p>
+            </div>
+        </flux:modal>
 
         {{-- Per-page table --}}
         <div class="rounded-xl border border-gray-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">

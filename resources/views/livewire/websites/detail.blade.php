@@ -16,9 +16,7 @@
 
             <flux:menu>
                 <flux:modal.trigger name="website-modal">
-                    <flux:menu.item
-                        wire:click="dispatch('open-website-modal', {mode: 'edit', website: {{ $website }}})"
-                        icon="pencil-square" class="cursor-pointer">Edit</flux:menu.item>
+                    <flux:menu.item icon="pencil-square" class="cursor-pointer">Edit</flux:menu.item>
                 </flux:modal.trigger>
 
                 <flux:modal.trigger name="delete-website">
@@ -29,7 +27,7 @@
     </x-inspektor.website-detail.page-header>
 
     {{-- Create/Edit website modal --}}
-    <livewire:websites.modal />
+    <livewire:websites.modal init-mode="edit" :website-id="$website->id" />
 
     {{-- Delete website modal --}}
     <flux:modal name="delete-website" class="min-w-[22rem]">

@@ -22,11 +22,9 @@ class EditWebsite
             return $website->update([
                 'name' => strip_tags($websiteData['name']),
                 'url' => rtrim(strip_tags($websiteData['url']), '/'),
-                'type' => $websiteData['type'],
-                'meta_title' => strip_tags($websiteData['meta_title']),
-                'meta_description' => strip_tags($websiteData['meta_description']),
-                'meta_image_url' => strip_tags($websiteData['meta_image_url']),
-
+                'meta_title' => strip_tags($websiteData['meta_title'] ?? ''),
+                'meta_description' => strip_tags($websiteData['meta_description'] ?? ''),
+                'meta_image_url' => strip_tags($websiteData['meta_image_url'] ?? ''),
             ]);
         }
     }
