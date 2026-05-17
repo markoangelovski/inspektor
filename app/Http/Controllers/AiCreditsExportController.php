@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PageAiCredit;
 use App\Models\Website;
 use Illuminate\Support\Str;
 
