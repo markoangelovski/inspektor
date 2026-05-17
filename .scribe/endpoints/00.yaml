@@ -1,0 +1,147 @@
+name: Websites
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/websites
+    metadata:
+      custom: []
+      groupName: Websites
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List websites'
+      description: 'Returns a paginated list of websites belonging to the authenticated user.'
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_KEY}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      page:
+        custom: []
+        name: page
+        description: 'Page number.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      page: 1
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "data": [{
+              "id": "01jv3kabc123def456ghi789jk",
+              "name": "My Website",
+              "url": "https://example.com",
+              "type": "standard",
+              "meta_title": "Example Domain",
+              "meta_description": "A sample website.",
+              "meta_image_url": null,
+              "pages_count": 120,
+              "pages_last_sync": "2026-05-01T10:00:00+00:00",
+              "created_at": "2026-01-01T00:00:00+00:00",
+              "updated_at": "2026-05-01T10:00:00+00:00"
+            }],
+            "links": {"first": "...", "last": "...", "prev": null, "next": null},
+            "meta": {"current_page": 1, "per_page": 25, "total": 1}
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/websites/{id}'
+    metadata:
+      custom: []
+      groupName: Websites
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get a website'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_AUTH_KEY}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      website:
+        custom: []
+        name: website
+        description: 'The website ULID.'
+        required: true
+        example: 01jv3kabc123def456ghi789jk
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      website: 01jv3kabc123def456ghi789jk
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "data": {
+              "id": "01jv3kabc123def456ghi789jk",
+              "name": "My Website",
+              "url": "https://example.com",
+              "type": "standard",
+              "meta_title": "Example Domain",
+              "meta_description": "A sample website.",
+              "meta_image_url": null,
+              "pages_count": 120,
+              "pages_last_sync": "2026-05-01T10:00:00+00:00",
+              "created_at": "2026-01-01T00:00:00+00:00",
+              "updated_at": "2026-05-01T10:00:00+00:00"
+            }
+          }
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 404
+        content: '{"message": "No query results for model [App\\Models\\Website]."}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

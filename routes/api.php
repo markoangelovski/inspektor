@@ -1,19 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\ContentExtractionRunController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\PageController;
+use App\Http\Controllers\Api\WebsiteController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-Route::prefix('content-extraction')->group(function () {
-    Route::get('/runs/{run}/progress', [ContentExtractionRunController::class, 'progress']);
-    Route::get('/runs/{run}/events', [ContentExtractionRunController::class, 'events']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('websites', WebsiteController::class)->only(['index', 'show']);
+    Route::apiResource('websites.pages', PageController::class)->only(['index', 'show']);
+    Route::apiResource('websites.content-extraction-runs', ContentExtractionRunController::class)->only(['index', 'show']);
 });
-
-Route::get(
-    '/websites/{website}/content-extraction-runs',
-    [ContentExtractionRunController::class, 'history']
-);
