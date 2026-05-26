@@ -5,6 +5,7 @@ namespace App\Domain\ContentExtraction\Jobs;
 use App\Domain\ContentExtraction\Enums\ContentExtractionRunStatus;
 use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 use App\Domain\ContentExtraction\Models\PageExtraction;
+use App\Domain\ContentExtraction\Services\RunFinalizer;
 use App\Models\Page;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,33 +19,37 @@ class StartContentExtractionRun implements ShouldQueue
         public readonly string $runId
     ) {}
 
-    public function handle(): void
+    public function handle(RunFinalizer $finalizer): void
     {
         $run = ContentExtractionRun::find($this->runId);
         if (! $run || $run->status->isTerminal()) {
             return;
         }
 
-        // 1. Bulk Insert Tickets (Faster & avoids row-by-row overhead on Neon)
-        // We use 'on conflict do nothing' via insertOrIgnore to prevent duplicates
-        $pageIds = Page::where('website_id', $run->website_id)->pluck('id');
+        // 1. Bulk Insert Tickets — pre-skip pages with a known non-200 status
+        $pages = Page::where('website_id', $run->website_id)
+            ->select(['id', 'http_status'])
+            ->get();
 
-        $tickets = $pageIds->map(fn ($id) => [
+        $tickets = $pages->map(fn (Page $page) => [
             'id' => (string) str()->ulid(),
-            'page_id' => $id,
+            'page_id' => $page->id,
             'website_id' => $run->website_id,
             'content_extraction_run_id' => $run->id,
-            'status' => 'pending',
+            'status' => ($page->http_status !== null && $page->http_status !== 200) ? 'skipped' : 'pending',
             'created_at' => now(),
             'updated_at' => now(),
         ])->toArray();
 
         PageExtraction::insertOrIgnore($tickets);
 
+        $skippedCount = collect($tickets)->where('status', 'skipped')->count();
+
         // 2. Update Run Stats
         $run->update([
             'status' => ContentExtractionRunStatus::Running,
-            'processed_pages' => 0,
+            'total_pages' => count($tickets),
+            'processed_pages' => $skippedCount,
             'started_at' => now(),
         ]);
 
@@ -53,9 +58,14 @@ class StartContentExtractionRun implements ShouldQueue
             ->where('status', 'pending')
             ->get();
 
+        if ($pendingTickets->isEmpty()) {
+            $finalizer->checkAndFinalize($run);
+
+            return;
+        }
+
         foreach ($pendingTickets as $ticket) {
-            // We update the status to 'processing' immediately BEFORE dispatching
-            // to prevent another process/retry from dispatching it again.
+            // Update to 'processing' BEFORE dispatching to prevent duplicate dispatch
             $ticket->update(['status' => 'processing']);
             ExtractPageContentJob::dispatch($ticket->id)->onQueue('page-extraction');
         }

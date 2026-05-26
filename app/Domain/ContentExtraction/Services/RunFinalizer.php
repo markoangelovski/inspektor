@@ -21,7 +21,11 @@ class RunFinalizer
         }
 
         $hasUnfinished = $run->pageExtractions()
-            ->whereNotIn('status', [PageExtractionStatus::Done, PageExtractionStatus::Failed])
+            ->whereNotIn('status', [
+                PageExtractionStatus::Done,
+                PageExtractionStatus::Failed,
+                PageExtractionStatus::Skipped,
+            ])
             ->exists();
 
         if ($hasUnfinished) {

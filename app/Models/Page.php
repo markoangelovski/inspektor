@@ -24,10 +24,13 @@ class Page extends Model
         'parent_path',
         'slug',
         'lastmod',
+        'http_status',
+        'redirect_url',
     ];
 
     protected $casts = [
         'lastmod' => 'datetime',
+        'http_status' => 'integer',
     ];
 
     public function website(): BelongsTo

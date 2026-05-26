@@ -10,6 +10,7 @@ use App\Domain\ContentExtraction\Services\ExtractionEventStore;
 use App\Domain\ContentExtraction\Services\PageContentWriter;
 use App\Domain\ContentExtraction\Services\PageFetcher;
 use App\Domain\ContentExtraction\Services\RunFinalizer;
+use App\Models\Page;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -50,7 +51,7 @@ class ExtractPageContentJob implements ShouldQueue
         RunFinalizer $finalizer,
         ExtractionEventStore $events,
     ): void {
-        $ticket = PageExtraction::with(['page', 'run'])->find($this->pageExtractionId);
+        $ticket = PageExtraction::with(['page.website', 'run'])->find($this->pageExtractionId);
 
         // 1. Validation: Stop if ticket doesn't exist, is done, or run is not active
         if (
@@ -79,10 +80,41 @@ class ExtractPageContentJob implements ShouldQueue
 
         try {
 
-            // 2. Fetch HTML
-            $html = $fetcher->fetch($ticket->page);
+            // 2. Fetch page
+            $fetchResult = $fetcher->fetch($ticket->page);
+
+            // 2a. Handle redirect (3xx) — persist status, skip content extraction
+            if ($fetchResult->isRedirect()) {
+                $ticket->page->update([
+                    'http_status' => $fetchResult->httpStatus,
+                    'redirect_url' => $fetchResult->redirectUrl,
+                ]);
+
+                $this->ensureRedirectDestinationExists($ticket->page, $fetchResult->redirectUrl);
+
+                $ticket->update([
+                    'status' => PageExtractionStatus::Skipped,
+                    'failure_type' => PageExtractionFailureType::Redirect,
+                    'error' => "Redirected to: {$fetchResult->redirectUrl}",
+                    'finished_at' => now(),
+                ]);
+
+                $events->append($ticket->run, [
+                    'type' => 'page.skipped',
+                    'message' => "Skipped (redirect {$fetchResult->httpStatus}): {$ticket->page->url} → {$fetchResult->redirectUrl}",
+                ]);
+
+                $ticket->run->increment('processed_pages');
+                $finalizer->checkAndFinalize($ticket->run);
+
+                return;
+            }
+
+            // 2b. Persist 200 status on the page
+            $ticket->page->update(['http_status' => $fetchResult->httpStatus]);
 
             // 3. Parse Content
+            $html = $fetchResult->html;
             $dom = new \DOMDocument;
             @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
             $xpath = new \DOMXPath($dom);
@@ -119,6 +151,10 @@ class ExtractPageContentJob implements ShouldQueue
 
                 $failureType = PageExtractionFailureType::fromStatusCode($statusCode);
 
+                if ($statusCode > 0) {
+                    $ticket->page->update(['http_status' => $statusCode]);
+                }
+
                 $ticket->update([
                     'status' => PageExtractionStatus::Failed,
                     'failure_type' => $failureType,
@@ -147,6 +183,32 @@ class ExtractPageContentJob implements ShouldQueue
             // We do NOT increment processed_pages yet.
             throw $e;
         }
+    }
+
+    private function ensureRedirectDestinationExists(Page $source, ?string $redirectUrl): void
+    {
+        if (! $redirectUrl) {
+            return;
+        }
+
+        $parsed = parse_url($redirectUrl);
+        $websiteHost = parse_url($source->website->url, PHP_URL_HOST);
+
+        if (($parsed['host'] ?? null) !== $websiteHost) {
+            return;
+        }
+
+        $path = $parsed['path'] ?? '/';
+        $parentDir = dirname($path);
+
+        Page::firstOrCreate(
+            ['website_id' => $source->website_id, 'url' => $redirectUrl],
+            [
+                'path' => $path,
+                'slug' => basename($path) ?: '/',
+                'parent_path' => ($parentDir === '.' || $parentDir === '/') ? null : $parentDir,
+            ]
+        );
     }
 
     private function parseHead(\DOMXPath $xpath): array

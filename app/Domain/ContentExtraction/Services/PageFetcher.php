@@ -2,14 +2,14 @@
 
 namespace App\Domain\ContentExtraction\Services;
 
+use App\Domain\ContentExtraction\DTOs\PageFetchResult;
 use App\Models\Page;
 use Illuminate\Support\Facades\Http;
 
 class PageFetcher
 {
-    public function fetch(Page $page): string
+    public function fetch(Page $page): PageFetchResult
     {
-        // Using a common Chrome User-Agent
         $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
         $response = Http::withHeaders([
@@ -19,17 +19,31 @@ class PageFetcher
         ])
             ->timeout(30)
             ->retry(2, 100)
+            ->withOptions(['allow_redirects' => false])
             ->get($page->url);
 
-        if ($response->status() === 404) {
-            // Throwing a specific message helps the Job catch block categorize it
+        $status = $response->status();
+
+        if ($status >= 300 && $status < 400) {
+            return new PageFetchResult(
+                httpStatus: $status,
+                html: null,
+                redirectUrl: $response->header('Location') ?: null,
+            );
+        }
+
+        if ($status === 404) {
             throw new \Exception('HTTP request returned status code 404', 404);
         }
 
         if ($response->failed()) {
-            throw new \Exception("Failed to fetch URL: {$page->url} (Status: {$response->status()})");
+            throw new \Exception("Failed to fetch URL: {$page->url} (Status: {$status})", $status);
         }
 
-        return $response->body();
+        return new PageFetchResult(
+            httpStatus: $status,
+            html: $response->body(),
+            redirectUrl: null,
+        );
     }
 }

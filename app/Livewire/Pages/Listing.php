@@ -141,12 +141,14 @@ class Listing extends Component
 
         return response()->streamDownload(function () use ($pages) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['URL', 'Path', 'Slug', 'Created', 'Updated', 'Last modified'], escape: '');
+            fputcsv($handle, ['URL', 'Path', 'Slug', 'HTTP Status', 'Redirect URL', 'Created', 'Updated', 'Last modified'], escape: '');
             foreach ($pages as $page) {
                 fputcsv($handle, [
                     $page->url,
                     $page->path,
                     $page->slug,
+                    $page->http_status ?? '',
+                    $page->redirect_url ?? '',
                     $page->created_at->format('Y-m-d H:i'),
                     $page->updated_at->format('Y-m-d H:i'),
                     $page->lastmod?->format('Y-m-d H:i') ?? '-',

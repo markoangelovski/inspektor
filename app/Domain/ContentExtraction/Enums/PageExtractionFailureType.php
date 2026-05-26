@@ -8,6 +8,7 @@ enum PageExtractionFailureType: string
     case RateLimited = 'rate_limited'; // 429 Too Many Requests
     case ParseTemporary = 'parse_temporary'; // 500, 502, 503, 504
     case ParsePermanent = 'parse_permanent'; // 404 Not Found, 410 Gone, 403 Forbidden
+    case Redirect = 'redirect'; // 301, 302, 307, 308 — page moved elsewhere
     case Cancelled = 'cancelled';
     case Unknown = 'unknown';
 
@@ -30,6 +31,7 @@ enum PageExtractionFailureType: string
         }
 
         return match (true) {
+            $code >= 300 && $code < 400 => self::Redirect,        // Redirects — page has moved
             $code === 404 || $code === 410 => self::ParsePermanent, // Page is explicitly missing or gone
             $code === 403 => self::ParsePermanent, // Forbidden - often a permanent block or geo-fence
             $code === 429 => self::RateLimited,    // Rate limited by the target server

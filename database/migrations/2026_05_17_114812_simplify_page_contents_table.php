@@ -10,8 +10,12 @@ return new class extends Migration
 
     public function up(): void
     {
+        // SQLite requires dropping indexes before the column in separate statements
         Schema::table('page_contents', function (Blueprint $table) {
             $table->dropUnique(['page_id', 'extractor_version']);
+            $table->dropIndex(['extractor_version']);
+        });
+        Schema::table('page_contents', function (Blueprint $table) {
             $table->dropColumn('extractor_version');
             $table->unique('page_id');
         });

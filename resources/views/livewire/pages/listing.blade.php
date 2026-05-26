@@ -81,6 +81,8 @@
                         <tr class="border-b border-gray-200 dark:border-zinc-800">
                             <th class="pb-2 pr-4">Path</th>
                             <th class="pb-2 pr-4">Slug</th>
+                            <th class="pb-2 pr-4">Status</th>
+                            <th class="pb-2 pr-4">Redirect URL</th>
                             <th class="pb-2 pr-4">Created</th>
                             <th class="pb-2 pr-4">Updated</th>
                             <th class="pb-2 pr-4">Last modified</th>
@@ -99,6 +101,38 @@
                                     class="border-b cursor-pointer transition-colors border-gray-200 hover:bg-gray-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30 {{ $selectedPageId === $page->id ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' : 'text-gray-700 dark:text-zinc-300' }}">
                                     <td class="py-3 pr-4">{{ $page->path }}</td>
                                     <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">{{ $page->slug }}</td>
+                                    <td class="py-3 pr-4">
+                                        @if ($page->http_status === null)
+                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
+                                                —
+                                            </span>
+                                        @elseif ($page->http_status === 200)
+                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                                                {{ $page->http_status }}
+                                            </span>
+                                        @elseif ($page->http_status >= 300 && $page->http_status < 400)
+                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                                {{ $page->http_status }}
+                                            </span>
+                                        @elseif ($page->http_status >= 400 && $page->http_status < 500)
+                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                                {{ $page->http_status }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                                                {{ $page->http_status }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500 max-w-[180px]">
+                                        @if ($page->redirect_url)
+                                            <span title="{{ $page->redirect_url }}" class="block truncate">
+                                                {{ $page->redirect_url }}
+                                            </span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
                                         {{ $page->created_at->format('Y-m-d H:i') }}
                                     </td>
