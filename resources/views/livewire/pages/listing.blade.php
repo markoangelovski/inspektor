@@ -83,9 +83,8 @@
                             <th class="pb-2 pr-4">Slug</th>
                             <th class="pb-2 pr-4">Status</th>
                             <th class="pb-2 pr-4">Redirect URL</th>
-                            <th class="pb-2 pr-4">Created</th>
-                            <th class="pb-2 pr-4">Updated</th>
-                            <th class="pb-2 pr-4">Last modified</th>
+                            <th class="pb-2 pr-4">In Sitemap</th>
+                            <th class="pb-2 pr-4">Last Modified</th>
                             <th class="pb-2 text-center">View Content</th>
                         </tr>
                     </thead>
@@ -103,23 +102,28 @@
                                     <td class="py-3 pr-4 text-gray-400 dark:text-zinc-400">{{ $page->slug }}</td>
                                     <td class="py-3 pr-4">
                                         @if ($page->http_status === null)
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
                                                 —
                                             </span>
                                         @elseif ($page->http_status === 200)
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
                                                 {{ $page->http_status }}
                                             </span>
                                         @elseif ($page->http_status >= 300 && $page->http_status < 400)
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                                                 {{ $page->http_status }}
                                             </span>
                                         @elseif ($page->http_status >= 400 && $page->http_status < 500)
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
                                                 {{ $page->http_status }}
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
                                                 {{ $page->http_status }}
                                             </span>
                                         @endif
@@ -133,13 +137,18 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
-                                        {{ $page->created_at->format('Y-m-d H:i') }}
+                                    <td class="py-3 pr-4">
+                                        @if ($page->sitemap_id === null)
+                                            <span class="text-gray-400 dark:text-zinc-500">—</span>
+                                        @elseif ($page->is_in_sitemap)
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">Yes</span>
+                                        @else
+                                            <span
+                                                class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">No</span>
+                                        @endif
                                     </td>
-                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
-                                        {{ $page->updated_at->format('Y-m-d H:i') }}
-                                    </td>
-                                    <td class="py-3 pr-4 text-xs text-gray-500 dark:text-zinc-500">
+                                    <td class="py-3 pr-4 text-gray-500 dark:text-zinc-500">
                                         {{ $page->lastmod?->format('Y-m-d H:i') ?? '—' }}
                                     </td>
                                     <td class="py-3 text-center">

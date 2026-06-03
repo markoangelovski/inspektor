@@ -19,6 +19,7 @@ class Page extends Model
 
     protected $fillable = [
         'website_id',
+        'sitemap_id',
         'url',
         'path',
         'parent_path',
@@ -26,16 +27,26 @@ class Page extends Model
         'lastmod',
         'http_status',
         'redirect_url',
+        'is_in_sitemap',
     ];
 
-    protected $casts = [
-        'lastmod' => 'datetime',
-        'http_status' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'lastmod' => 'datetime',
+            'http_status' => 'integer',
+            'is_in_sitemap' => 'boolean',
+        ];
+    }
 
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
+    }
+
+    public function sitemap(): BelongsTo
+    {
+        return $this->belongsTo(Sitemap::class);
     }
 
     public function pageContents(): HasMany

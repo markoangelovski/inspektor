@@ -56,6 +56,7 @@ class StorePages
             $rows[] = [
                 'id' => strtolower(Str::ulid()),
                 'website_id' => $website->id,
+                'sitemap_id' => $page['sitemap_id'] ?? null,
                 'url' => $url,
                 'path' => $path,
                 'slug' => $slug,
@@ -66,8 +67,10 @@ class StorePages
             ];
         }
 
-        // Bulk insert, ignore duplicates (unique per website_id + url)
-        Page::upsert($rows, ['website_id', 'url'], ['lastmod', 'updated_at']);
+        // Bulk insert; on conflict update lastmod, updated_at, and sitemap_id.
+        // sitemap_id must be in the update list so existing pages (created before
+        // sitemap tracking was added) get populated on the next Refresh.
+        Page::upsert($rows, ['website_id', 'url'], ['sitemap_id', 'lastmod', 'updated_at']);
 
         return count($rows);
     }

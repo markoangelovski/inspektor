@@ -11,11 +11,14 @@ use App\Domain\ContentExtraction\Services\PageContentWriter;
 use App\Domain\ContentExtraction\Services\PageFetcher;
 use App\Domain\ContentExtraction\Services\RunFinalizer;
 use App\Models\Page;
+use App\Models\Sitemap;
+use App\Services\PagesFetcher;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class ExtractPageContentJob implements ShouldQueue
 {
@@ -50,6 +53,7 @@ class ExtractPageContentJob implements ShouldQueue
         PageContentWriter $writer,
         RunFinalizer $finalizer,
         ExtractionEventStore $events,
+        PagesFetcher $pagesFetcher,
     ): void {
         $ticket = PageExtraction::with(['page.website', 'run'])->find($this->pageExtractionId);
 
@@ -88,6 +92,7 @@ class ExtractPageContentJob implements ShouldQueue
                 $ticket->page->update([
                     'http_status' => $fetchResult->httpStatus,
                     'redirect_url' => $fetchResult->redirectUrl,
+                    'is_in_sitemap' => $this->checkIsInSitemap($ticket->page, $pagesFetcher),
                 ]);
 
                 $this->ensureRedirectDestinationExists($ticket->page, $fetchResult->redirectUrl);
@@ -111,7 +116,10 @@ class ExtractPageContentJob implements ShouldQueue
             }
 
             // 2b. Persist 200 status on the page
-            $ticket->page->update(['http_status' => $fetchResult->httpStatus]);
+            $ticket->page->update([
+                'http_status' => $fetchResult->httpStatus,
+                'is_in_sitemap' => $this->checkIsInSitemap($ticket->page, $pagesFetcher),
+            ]);
 
             // 3. Parse Content
             $html = $fetchResult->html;
@@ -152,7 +160,10 @@ class ExtractPageContentJob implements ShouldQueue
                 $failureType = PageExtractionFailureType::fromStatusCode($statusCode);
 
                 if ($statusCode > 0) {
-                    $ticket->page->update(['http_status' => $statusCode]);
+                    $ticket->page->update([
+                        'http_status' => $statusCode,
+                        'is_in_sitemap' => $this->checkIsInSitemap($ticket->page, $pagesFetcher),
+                    ]);
                 }
 
                 $ticket->update([
@@ -183,6 +194,30 @@ class ExtractPageContentJob implements ShouldQueue
             // We do NOT increment processed_pages yet.
             throw $e;
         }
+    }
+
+    private function checkIsInSitemap(Page $page, PagesFetcher $pagesFetcher): bool
+    {
+        if (! $page->sitemap_id) {
+            return true;
+        }
+
+        $sitemap = Sitemap::find($page->sitemap_id);
+
+        if (! $sitemap) {
+            return false;
+        }
+
+        $urlSet = Cache::remember(
+            "sitemap_urls:{$page->sitemap_id}",
+            now()->addHour(),
+            fn () => collect($pagesFetcher->fetchFromSitemap($sitemap->url))
+                ->pluck('url')
+                ->flip()
+                ->all()
+        );
+
+        return array_key_exists($page->url, $urlSet);
     }
 
     private function ensureRedirectDestinationExists(Page $source, ?string $redirectUrl): void

@@ -116,7 +116,7 @@ class Listing extends Component
 
     public function openViewer(string $pageId): void
     {
-        $this->viewerPage = Page::with('latestContent')->findOrFail($pageId);
+        $this->viewerPage = Page::with(['latestContent', 'sitemap'])->findOrFail($pageId);
         $this->viewerOpen = true;
         $this->dispatch('viewer-opened', ['content' => $this->viewerPage->content]);
     }
@@ -130,6 +130,7 @@ class Listing extends Component
     {
         $pages = $this->website
             ->pages()
+            ->with('sitemap')
             ->when(
                 $this->search !== '',
                 fn ($query) => $query->where('path', 'like', '%'.$this->search.'%')
@@ -141,17 +142,25 @@ class Listing extends Component
 
         return response()->streamDownload(function () use ($pages) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['URL', 'Path', 'Slug', 'HTTP Status', 'Redirect URL', 'Created', 'Updated', 'Last modified'], escape: '');
+            fputcsv($handle, ['URL', 'Path', 'Slug', 'HTTP Status', 'Redirect URL', 'Is in sitemap', 'Originating sitemap', 'Created', 'Updated', 'Last modified'], escape: '');
             foreach ($pages as $page) {
+                if ($page->sitemap_id === null) {
+                    $isInSitemap = '';
+                } else {
+                    $isInSitemap = $page->is_in_sitemap ? 'Yes' : 'No';
+                }
+
                 fputcsv($handle, [
                     $page->url,
                     $page->path,
                     $page->slug,
                     $page->http_status ?? '',
                     $page->redirect_url ?? '',
+                    $isInSitemap,
+                    $page->sitemap?->url ?? '',
                     $page->created_at->format('Y-m-d H:i'),
                     $page->updated_at->format('Y-m-d H:i'),
-                    $page->lastmod?->format('Y-m-d H:i') ?? '-',
+                    $page->lastmod?->format('Y-m-d H:i') ?? '',
                 ], escape: '');
             }
             fclose($handle);

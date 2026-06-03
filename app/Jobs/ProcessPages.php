@@ -38,7 +38,9 @@ class ProcessPages implements ShouldQueue
             foreach ($website->sitemaps as $sitemap) {
                 $pages = $pagesFetcher->fetchFromSitemap($sitemap->url);
                 foreach ($pages as $page) {
-                    $allPages[$page['url']] = $page; // deduplicate by URL
+                    if (! array_key_exists($page['url'], $allPages)) {
+                        $allPages[$page['url']] = array_merge($page, ['sitemap_id' => $sitemap->id]);
+                    }
                 }
             }
 

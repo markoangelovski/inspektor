@@ -11,8 +11,10 @@ use App\Domain\ContentExtraction\Models\ContentExtractionRun;
 use App\Domain\ContentExtraction\Models\PageExtraction;
 use App\Domain\ContentExtraction\Services\PageFetcher;
 use App\Models\Page;
+use App\Models\Sitemap;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\PagesFetcher;
 
 use function Pest\Laravel\mock;
 
@@ -134,4 +136,66 @@ it('finalizes the run after processing the only page via redirect', function () 
 
     $this->run->refresh();
     expect($this->run->status)->toBe(ContentExtractionRunStatus::Completed);
+});
+
+it('sets is_in_sitemap to true when page url exists in its originating sitemap', function () {
+    $sitemap = Sitemap::create([
+        'website_id' => $this->website->id,
+        'url' => 'https://example.com/sitemap.xml',
+    ]);
+    $this->page->update(['sitemap_id' => $sitemap->id]);
+
+    $fetcher = mock(PageFetcher::class);
+    $fetcher->shouldReceive('fetch')->once()->andReturn(
+        new PageFetchResult(200, '<html><head><title>Test</title></head><body><p>Content</p></body></html>', null)
+    );
+
+    $pagesFetcher = mock(PagesFetcher::class);
+    $pagesFetcher->shouldReceive('fetchFromSitemap')
+        ->with($sitemap->url)
+        ->once()
+        ->andReturn([
+            ['url' => $this->page->url, 'lastmod' => null],
+        ]);
+
+    app()->call([new ExtractPageContentJob($this->ticket->id), 'handle']);
+
+    expect($this->page->refresh()->is_in_sitemap)->toBeTrue();
+});
+
+it('sets is_in_sitemap to false when page url is missing from its originating sitemap', function () {
+    $sitemap = Sitemap::create([
+        'website_id' => $this->website->id,
+        'url' => 'https://example.com/sitemap.xml',
+    ]);
+    $this->page->update(['sitemap_id' => $sitemap->id]);
+
+    $fetcher = mock(PageFetcher::class);
+    $fetcher->shouldReceive('fetch')->once()->andReturn(
+        new PageFetchResult(200, '<html><head><title>Test</title></head><body><p>Content</p></body></html>', null)
+    );
+
+    $pagesFetcher = mock(PagesFetcher::class);
+    $pagesFetcher->shouldReceive('fetchFromSitemap')
+        ->with($sitemap->url)
+        ->once()
+        ->andReturn([
+            ['url' => 'https://example.com/other-page', 'lastmod' => null],
+        ]);
+
+    app()->call([new ExtractPageContentJob($this->ticket->id), 'handle']);
+
+    expect($this->page->refresh()->is_in_sitemap)->toBeFalse();
+});
+
+it('leaves is_in_sitemap true when page has no sitemap_id', function () {
+    // $this->page has no sitemap_id by default
+    $fetcher = mock(PageFetcher::class);
+    $fetcher->shouldReceive('fetch')->once()->andReturn(
+        new PageFetchResult(200, '<html><head><title>Test</title></head><body><p>Content</p></body></html>', null)
+    );
+
+    app()->call([new ExtractPageContentJob($this->ticket->id), 'handle']);
+
+    expect($this->page->refresh()->is_in_sitemap)->toBeTrue();
 });

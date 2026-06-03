@@ -27,12 +27,22 @@
                 <div class="space-y-3">
                     <div>
                         <span class="text-gray-500 dark:text-zinc-500">URL:</span>
-                        <p class="mt-1 break-all text-gray-700 dark:text-zinc-300">
+                        <div class="mt-1 flex items-start gap-2">
                             <a href="{{ $viewerPage->url }}" target="_blank" rel="noopener noreferrer"
-                                class="text-gray-500 hover:text-blue-600 hover:underline truncate block">
+                                class="break-all text-gray-500 hover:text-blue-600 hover:underline min-w-0">
                                 {{ $viewerPage->url }}
-                        </p>
-                        </a>
+                            </a>
+                            <div x-data="{ copied: false }"
+                                class="shrink-0 mt-0.5">
+                                <button type="button"
+                                    title="Copy to clipboard"
+                                    @click="navigator.clipboard.writeText('{{ $viewerPage->url }}'); copied = true; setTimeout(() => copied = false, 5000)"
+                                    class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer">
+                                    <flux:icon.check x-show="copied" class="size-4 text-green-500" />
+                                    <flux:icon.document-duplicate x-show="!copied" class="size-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <span class="text-gray-500 dark:text-zinc-500">Path:</span>
@@ -41,6 +51,27 @@
                     <div>
                         <span class="text-gray-500 dark:text-zinc-500">Date Created:</span>
                         <p class="mt-1">{{ $viewerPage->created_at->format('Y-m-d H:i') }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-zinc-500">Date Updated:</span>
+                        <p class="mt-1">{{ $viewerPage->updated_at->format('Y-m-d H:i') }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-zinc-500">Last Modified:</span>
+                        <p class="mt-1">{{ $viewerPage->lastmod?->format('Y-m-d H:i') ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-zinc-500">Originating Sitemap:</span>
+                        @if ($viewerPage->sitemap)
+                            <p class="mt-1 break-all">
+                                <a href="{{ $viewerPage->sitemap->url }}" target="_blank" rel="noopener noreferrer"
+                                    class="text-gray-500 hover:text-blue-600 hover:underline break-all">
+                                    {{ $viewerPage->sitemap->url }}
+                                </a>
+                            </p>
+                        @else
+                            <p class="mt-1 text-gray-400 dark:text-zinc-500">—</p>
+                        @endif
                     </div>
                 </div>
 
